@@ -3,5 +3,9 @@ Repositório para versionamento da GUI.
 Progresso da Implementação:
 - Editor de Programas;
 - Máquina de Estados;
-- Conexão TCP (50%);
-- JsonFiles (10%);
+- Conexão TCP;
+- JsonFiles;
+- Intertravamento entre GUI e BBB (20%);
+- Suporte e ajuda ao usuário (0%);
+- Arquivos de configuração padrão (0%);
+- Carregar e Salvar programas (0%);
