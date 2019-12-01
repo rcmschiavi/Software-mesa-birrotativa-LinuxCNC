@@ -9,13 +9,13 @@ Ainda não foi implementada a queue que fará a comunicação entre a thread pri
 '''
 from threading import Thread
 import socket
-import time
-
-
+import time, json, os
 
 class Connection:
 
-    def __init__(self):
+    def __init__(self, q):
+        self.cur_path = os.path.dirname(__file__)
+        self.q = q
         self.callback_latency = 5
         self.connection = None
         self.i = 0
@@ -27,11 +27,12 @@ class Connection:
         self.data = None
         self.status = None
 
+
     def start_socket(self):
         # A conexão é iniciada e reiniciada sempre que se fecha por algum motivo
         while True:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_address = ('10.0.0.2', 8000)
+            self.server_address = ('10.0.0.2', 8001)
             self.sock.bind(self.server_address)
             self.sock.listen(1)
             self.wait_connection()
@@ -59,13 +60,24 @@ class Connection:
                         break
                 except:
                     print "except timeout"
-                    self.callback("Há: " + str(self.i))
+                    if not self.q.empty():
+                        self.data = self.q.get()
+                    else:
+                        print "q is empty"
+                    self.callback(self.data)
         except:
             print "error"
-            pass
 
     def callback(self, data):
-        self.connection.sendall(data)
+        if data == "":
+            try:
+                t_i = time.time()
+                with open(self.cur_path + '/status_data.json') as json_file:
+                    data = json.load(json_file)
+                t_f = time.time()
+            except:
+                data = "erro"
+        self.connection.sendall(str(data)+ "Tempo: abertura json " + str(t_f-t_i))
 
     def run(self):
         print self.a
@@ -73,15 +85,17 @@ class Connection:
 
 class Th(Thread):
 
-    def __init__(self):
+    def __init__(self,q):
         Thread.__init__(self)
         self.con = None
+        self.q = q
 
     def run(self):
         self.connect()
 
     def connect(self):
-        self.con = Connection()
+        self.con = Connection(self.q)
+
 
 
 
