@@ -22,7 +22,9 @@
 #include <QTableWidget>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QJsonParseError>
+#include <QMessageBox>
 #include "connectionprompt.h"
 
 
@@ -44,6 +46,7 @@ public slots:
 
 private slots:
     void on_btConfig_clicked();
+
     void onReadyRead();
 
     void changeWindowState(int state);
@@ -72,7 +75,6 @@ private slots:
 
     void on_cbInspecao_clicked(bool checked);
 
-
     void on_cbFimOpJog_clicked(bool checked);
 
     void on_cbInspecaoJog_toggled(bool checked);
@@ -81,14 +83,37 @@ private slots:
 
     QJsonObject recieveJsonThroughSocket();
 
+    void on_btCarregar_clicked();
+
+    void on_btHome_clicked(bool checked);
+
+    void on_btGO_clicked();
+
+    void on_btCycStart_clicked();
+
+    void on_homeMck_clicked();
+
+    void on_activePrgMck_clicked();
+
+    void on_btAtualizar_clicked();
+
+    void on_btAlterar_clicked();
+
 private:
     Ui::MainWindow *ui;
 
-    //State Machine
+    //BBB State Machine
+    bool homed = false;
+    bool homing = false;
+    bool turnedOn = false;
+    bool programActive = false;
+    bool programExec = false;
+    bool taskExec = false;
+    bool inspection = false;
+
+    //State Machine GUI
     int stateNow = STANDBY;
     int stateOld = READY;
-    bool homed = false;
-    bool turnedOn = false;
 
     //Connection Variables
     ConnectionPrompt* connectionWindow;
@@ -97,9 +122,14 @@ private:
     int beagleBonePort = 10000;
     QTcpSocket* tcpSocket;
     QByteArray dataBuffer;
+    QJsonObject recieverObject;
 
-    //
+    //Program Editor Variables
     int editorLinePointer = 0;
     QTableWidgetItem *cellPtr;
+
+    //Inspection Variables
+    int standardCalibration = 0;
+
 };
 #endif // MAINWINDOW_H

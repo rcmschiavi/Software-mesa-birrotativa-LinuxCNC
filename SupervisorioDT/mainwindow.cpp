@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     this->connectionWindow = new ConnectionPrompt(this);
+    this->tcpSocket = new QTcpSocket();
     ui->setupUi(this);
     //Conexão de sinais e slots entre a janela principal e a janela de configuração
     connect(this->connectionWindow, SIGNAL(updateIP(QString)), this, SLOT(saveIpConfiguration(QString)));
@@ -33,10 +34,17 @@ void MainWindow::savePortConfiguration(int port)
 
 void MainWindow::sendJsonThroughSocket(const QJsonObject obj)
 {
-   QJsonDocument doc;
-   doc.setObject(obj);
-   QByteArray message = doc.toBinaryData();
-   tcpSocket->write(message);
+    //Estrutura de dados JsonDocument a ser enviado.
+    QJsonDocument doc;
+    //Preenche JsonObject no documento
+    doc.setObject(obj);
+    //Converte para json.
+    QByteArray message = doc.toJson();
+    //Envia o arquivo via TCP.
+    if(tcpSocket->isOpen())
+        tcpSocket->write(message);
+    else
+        ui->warningLog->append("Falha na conexão");
 }
 
 QJsonObject MainWindow::recieveJsonThroughSocket()
@@ -61,7 +69,10 @@ void MainWindow::on_btConfig_clicked()
 //Slot acionado sempre que exite um pacote TCP pronto para leitura.
 void MainWindow::onReadyRead()
 {
-    this->dataBuffer = this->tcpSocket->readAll();
+    recieverObject = recieveJsonThroughSocket();
+    if(recieverObject.isEmpty())
+        return;
+    //Aqui serão inseridos os parsers para absorver os dados JSON recebidos pela GUI.
 }
 
 //=============================================STATE MACHINE===============================
@@ -230,7 +241,6 @@ void MainWindow::on_btConnect_clicked(bool checked)
         {
             ui->btConnect->setChecked(true);
         }
-
     }
 }
 
@@ -327,12 +337,15 @@ void MainWindow::on_btAuto_clicked(bool checked)
 {
     if(checked)
     {
-        if(this->stateNow == READY)
+        if(this->stateNow == READY && this->homed)
         {
             changeWindowState(AUTO);
         }
         else
+        {
+            ui->warningLog->append("Favor fazer a rotina de home.");
             ui->btAuto->setChecked(false);
+        }
     }
     else
     {
@@ -344,6 +357,117 @@ void MainWindow::on_btAuto_clicked(bool checked)
             ui->btAuto->setChecked(true);
     }
 }
+
+void MainWindow::on_btHome_clicked(bool checked)
+{
+    if(checked)
+    {
+        //Só executa o homing durante JOG ou AUTO
+        if(this->stateNow == JOG || this->stateNow == AUTO)
+        {
+            //Define o estado da BBB como homing (só volta a false quando a BBB retornar o status homing ok
+            this->homing = true;
+            QJsonObject senderObject{{"mode","home"},{"params",0}};
+            sendJsonThroughSocket(senderObject);
+        }
+        else
+            ui->btAuto->setChecked(false);
+    }
+    else
+    {
+        if(!((this->stateNow == JOG || this->stateNow == AUTO) && !this->homing && this->homed))
+            ui->btAuto->setChecked(true);
+    }
+}
+
+void MainWindow::on_btGO_clicked()
+{
+    if(this->stateNow == JOG && this->homed)
+    {
+        QJsonArray movement;
+        movement.append(ui->sbBJog->value());
+        movement.append(ui->sbCJog->value());
+        //FimOP e Inspect são sempre falsos no modo Jog.
+        movement.append(0);
+        movement.append(0);
+        QJsonObject senderObject{{"mode","jog"},{"params",movement}};
+        sendJsonThroughSocket(senderObject);
+    }
+    else if(this->stateNow == JOG && !this->homed)
+    {
+        ui->warningLog->append("Favor fazer a rotina de Home.");
+    }
+}
+
+void MainWindow::on_btCycStart_clicked()
+{
+    if((this->stateNow == AUTO) && this->homed && this->programActive && !programExec && !taskExec)
+    {
+        this->stateNow = AUTO_RUN;
+        changeWindowState(AUTO_RUN);
+        QJsonObject senderObject{{"mode","cycStart"},{"params",0}};
+        sendJsonThroughSocket(senderObject);
+    }
+    else
+        ui->warningLog->append("Checar home, programa ativo e máquina parada.");
+}
+
+
+void MainWindow::on_btAtualizar_clicked()
+{
+    QJsonArray paramArray;
+    paramArray.append(ui->dsbDBCP->value());
+    paramArray.append(ui->dsbTol->value());
+    //Se o valor de calibração for zero, não alterar o valor padrão.
+    paramArray.append(0);
+    QJsonObject senderObject{{"mode","inspection"},{"params",paramArray}};
+    sendJsonThroughSocket(senderObject);
+}
+
+void MainWindow::on_btAlterar_clicked()
+{
+   int ret = QMessageBox::warning(this, tr("Aviso!"), tr("O valor de calibração só deve ser mudado\n"
+                                                "se o sistema físico de inspeção for mudado!\n"
+                                                "Aperte Salvar para continuar."), QMessageBox::Save|QMessageBox::Discard);
+
+   if(ret == QMessageBox::Save)
+   {
+       QJsonArray paramArray;
+       paramArray.append(ui->dsbDBCP->value());
+       paramArray.append(ui->dsbTol->value());
+       paramArray.append(ui->sbCalib->value());
+       QJsonObject senderObject{{"mode","inspection"},{"params", paramArray}};
+   }
+   else if(ret == QMessageBox::Discard)
+       return;
+}
+
+
+void MainWindow::on_cbFimOp_clicked(bool checked)
+{
+    if(checked)
+        ui->cbInspecao->setChecked(false);
+}
+
+void MainWindow::on_cbInspecao_clicked(bool checked)
+{
+    if(checked)
+        ui->cbFimOp->setChecked(false);
+}
+
+void MainWindow::on_cbFimOpJog_clicked(bool checked)
+{
+    if(checked)
+        ui->cbInspecaoJog->setChecked(false);
+}
+
+void MainWindow::on_cbInspecaoJog_toggled(bool checked)
+{
+    if(checked)
+        ui->cbFimOpJog->setChecked(false);
+}
+
+//=============================================PROGRAM EDITOR===============================
 
 void MainWindow::on_btAddTarefa_clicked()
 {
@@ -456,26 +580,51 @@ void MainWindow::on_btLimpar_clicked()
     }
 }
 
-void MainWindow::on_cbFimOp_clicked(bool checked)
+void MainWindow::on_btCarregar_clicked()
 {
-    if(checked)
-        ui->cbInspecao->setChecked(false);
+    if(this->stateNow == PROG)
+    {
+        //O programa não é nulo
+        if(ui->programEditor->rowCount() >= 1)
+        {
+            QJsonArray arrayOfMovements;
+            ui->warningLog->append("Loading Data...");
+            //Varrendo todas as linhas
+            for(int i=0; i<ui->programEditor->rowCount(); i++)
+            {
+                //Varrendo todas as colunas exceto Task #
+                QJsonArray movement;
+                for(int j=1; j<ui->programEditor->columnCount(); j++)
+                {
+                    if(ui->programEditor->item(i,j)->text().toLower() == "true")
+                        movement.append(1);
+                    else if(ui->programEditor->item(i,j)->text().toLower() == "false")
+                        movement.append(0);
+                    else
+                        movement.append(ui->programEditor->item(i,j)->text().toDouble());
+                }
+                arrayOfMovements.append(movement);
+            }
+            QJsonObject senderObject{
+                {"mode","program"},
+                {"params",arrayOfMovements}
+            };
+            sendJsonThroughSocket(senderObject);
+        }
+        else
+            ui->warningLog->append("O programa está vazio.");
+    }
 }
 
-void MainWindow::on_cbInspecao_clicked(bool checked)
+//Mocks (debug)
+
+void MainWindow::on_homeMck_clicked()
 {
-    if(checked)
-        ui->cbFimOp->setChecked(false);
+    this->homed = true;
+    this->homing = false;
 }
 
-void MainWindow::on_cbFimOpJog_clicked(bool checked)
+void MainWindow::on_activePrgMck_clicked()
 {
-    if(checked)
-        ui->cbInspecaoJog->setChecked(false);
-}
-
-void MainWindow::on_cbInspecaoJog_toggled(bool checked)
-{
-    if(checked)
-        ui->cbFimOpJog->setChecked(false);
+    this->programActive = true;
 }
