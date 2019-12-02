@@ -1,1 +1,5 @@
 Pasta criada para documentar as comunicações JSON e outras trocas de informação entre os sistemas.
+
+Tópicos discutir:
+
+-Tentar enviar mensagem até receber status code 200 como resposta ou ecoar o que foi enviado.

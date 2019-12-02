@@ -10,6 +10,7 @@ Ainda não foi implementada a queue que fará a comunicação entre a thread pri
 from threading import Thread
 import socket
 import time, json, os
+from collections import OrderedDict
 
 class Connection:
 
@@ -45,6 +46,7 @@ class Connection:
         print "Conectando"
         self.connection, self.client_address = self.sock.accept()
         self.connection.settimeout(self.callback_latency)
+        print ("Conectado à: "+  str(self.client_address))
 
 
     def wait_message(self):
@@ -55,18 +57,21 @@ class Connection:
                     if self.data:
                         print self.data
                         self.i += 1
+                        self.callback("200")
                     else:
                         #Caso a conexão seja perdida, finaliza esse laço e entra no laço de reconectar
                         break
-                except:
-                    print "except timeout"
+                except Exception as e:
+                    print ("Erro 1 waitmessage: " + str(e))
                     if not self.q.empty():
                         self.data = self.q.get()
+                        print(self.data)
                     else:
                         print "q is empty"
+                        self.data=""
                     self.callback(self.data)
-        except:
-            print "error"
+        except Exception as e:
+            print ("Erro 2 waitmessage: " + str(e))
 
     def callback(self, data):
         if data == "":
@@ -75,9 +80,14 @@ class Connection:
                 with open(self.cur_path + '/status_data.json') as json_file:
                     data = json.load(json_file)
                 t_f = time.time()
-            except:
-                data = "erro"
-        self.connection.sendall(str(data)+ "Tempo: abertura json " + str(t_f-t_i))
+                self.connection.sendall(str(data) + "Tempo: abertura json " + str(t_f - t_i) + "\n")
+            except Exception as e:
+                print ("Erro callback: "+str(e))
+        else:
+            self.connection.sendall(str(data)+"\n")
+
+    def emergency(self):
+        self.connection.sendall()
 
     def run(self):
         print self.a
