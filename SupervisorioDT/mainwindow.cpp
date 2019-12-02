@@ -11,11 +11,93 @@ MainWindow::MainWindow(QWidget *parent)
     //Conexão de sinais e slots entre a janela principal e a janela de configuração
     connect(this->connectionWindow, SIGNAL(updateIP(QString)), this, SLOT(saveIpConfiguration(QString)));
     connect(this->connectionWindow, SIGNAL(updatePort(int)), this, SLOT(savePortConfiguration(int)));
+    connect(ui->actionAbrir_Programa, SIGNAL(triggered()), this, SLOT(openFileAct()));
+    connect(ui->actionSalvar_Programa, SIGNAL(triggered()), this, SLOT(saveFileAct()));
+    connect(ui->actionSobre, SIGNAL(triggered()),this,SLOT(aboutSupervisorio()));
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+//=========================================FILE MANAGEMENT==========================================
+
+void MainWindow::saveJsonToFile(QJsonDocument doc)
+{
+    QString fileName = QFileDialog::getSaveFileName(this,tr("Salvar Programa"), "C:/", tr("JSON Files(*.json)"));
+    if(fileName.isNull()) return;
+    QFile jsonFile(fileName);
+    jsonFile.open(QFile::WriteOnly);
+    jsonFile.write(doc.toJson());
+}
+
+QJsonDocument MainWindow::loadJsonFromFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,tr("Abrir Programa"), "C:/", tr("JSON Files(*.json)"));
+    QJsonDocument doc;
+    if(fileName.isNull()) return doc;
+    QFile jsonFile(fileName);
+    jsonFile.open(QFile::ReadOnly);
+    return doc.fromJson(jsonFile.readAll());
+}
+
+void MainWindow::openFileAct()
+{
+    int ret = QMessageBox::warning(this,"Aviso!","Prosseguir irá apagar o programa atual!", QMessageBox::Ok|QMessageBox::Cancel);
+    if(ret == QMessageBox::Ok)
+    {
+        QJsonDocument doc = loadJsonFromFile();
+        if(doc.isEmpty())
+        {
+            ui->warningLog->append("Arquivo Inválido");
+            return;
+        }
+        QJsonArray movement;
+        double B_ang;
+        double C_ang;
+        bool fim_op;
+        bool inspect;
+        QJsonArray arrayOfMovements = doc.object().value("params").toArray();
+        clearWidgetTable();
+        for(int i=0; i<arrayOfMovements.size(); i++)
+        {
+            try{
+            movement = arrayOfMovements.at(i).toArray();
+            B_ang = movement.at(0).toDouble();
+            C_ang = movement.at(1).toDouble();
+            fim_op = movement.at(2).toBool();
+            inspect = movement.at(3).toBool();
+            drawWidgetTable(B_ang,C_ang,fim_op,inspect);
+            }
+            catch(...)
+            {
+                ui->warningLog->append("Erro na leitura do arquivo, formato inesperado.");
+                clearWidgetTable();
+                return;
+            }
+        }
+    }
+    else if(ret == QMessageBox::Cancel)
+    {
+        return;
+    }
+}
+
+void MainWindow::saveFileAct()
+{
+    QJsonObject programaObj = loadWidgetTable();
+    QJsonDocument doc;
+    doc.setObject(programaObj);
+    saveJsonToFile(doc);
+}
+
+void MainWindow::aboutSupervisorio()
+{
+    QMessageBox::about(this,"Sobre",tr("Supervisório Dream Team\n\n""Interface desenvolvida para o controle de uma\n"
+                                       "célula robótica constituída pelo robô FANUC e\n uma Mesa Bi-Rotativa com sistema de inspeção.\n\n"
+                                       "Versão: 1.0"));
 }
 
 //==============================================CONNECTION==========================================
@@ -469,39 +551,19 @@ void MainWindow::on_cbInspecaoJog_toggled(bool checked)
 
 //=============================================PROGRAM EDITOR===============================
 
-void MainWindow::on_btAddTarefa_clicked()
+void MainWindow::drawWidgetTable(double B_ang, double C_ang, bool fim_op, bool inspect)
 {
     int auxPointer = editorLinePointer;
-    double B_Value = ui->sbBProg->value();
-    double C_Value = ui->sbCProg->value();
-    bool fim_op = ui->cbFimOp->isChecked();
-    bool inspect = ui->cbInspecao->isChecked();
-    if(this->stateNow == PROG)
-    {
-        B_Value = ui->sbBProg->value();
-        C_Value = ui->sbCProg->value();
-        fim_op = ui->cbFimOp->isChecked();
-        inspect = ui->cbInspecao->isChecked();
-    }
-    else if(this->stateNow == JOG && ui->cbTeach->isChecked())
-    {
-        B_Value = ui->sbBJog->value();
-        C_Value = ui->sbCJog->value();
-        fim_op = ui->cbFimOpJog->isChecked();
-        inspect = ui->cbInspecaoJog->isChecked();
-    }
-    else
-        return;
     editorLinePointer = ui->programEditor->currentRow();
     ui->programEditor->insertRow(editorLinePointer);
     cellPtr = new QTableWidgetItem;
     cellPtr->setText(QString::number(editorLinePointer));
     ui->programEditor->setItem(editorLinePointer,TASK,cellPtr);
     cellPtr = new QTableWidgetItem;
-    cellPtr->setText(QString::number(B_Value));
+    cellPtr->setText(QString::number(B_ang));
     ui->programEditor->setItem(editorLinePointer,B_ANG,cellPtr);
     cellPtr = new QTableWidgetItem;
-    cellPtr->setText(QString::number(C_Value));
+    cellPtr->setText(QString::number(C_ang));
     ui->programEditor->setItem(editorLinePointer,C_ANG,cellPtr);
     if(fim_op)
     {
@@ -538,6 +600,54 @@ void MainWindow::on_btAddTarefa_clicked()
     }
 }
 
+void MainWindow::clearWidgetTable()
+{
+    ui->programEditor->clear();
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("TASK #");
+    ui->programEditor->setHorizontalHeaderItem(TASK, cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("B");
+    ui->programEditor->setHorizontalHeaderItem(B_ANG, cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("C");
+    ui->programEditor->setHorizontalHeaderItem(C_ANG, cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("FIM OPERAÇÃO?");
+    ui->programEditor->setHorizontalHeaderItem(FIM_OP, cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("INSPEÇÃO?");
+    ui->programEditor->setHorizontalHeaderItem(INSPECT, cellPtr);
+    ui->programEditor->setCurrentCell(0,0);
+    drawWidgetTable(0,0,false,false);
+    ui->programEditor->setRowCount(1);
+}
+
+void MainWindow::on_btAddTarefa_clicked()
+{
+    double B_Value;
+    double C_Value;
+    bool fim_op;
+    bool inspect;
+    if(this->stateNow == PROG)
+    {
+        B_Value = ui->sbBProg->value();
+        C_Value = ui->sbCProg->value();
+        fim_op = ui->cbFimOp->isChecked();
+        inspect = ui->cbInspecao->isChecked();
+    }
+    else if(this->stateNow == JOG && ui->cbTeach->isChecked())
+    {
+        B_Value = ui->sbBJog->value();
+        C_Value = ui->sbCJog->value();
+        fim_op = ui->cbFimOpJog->isChecked();
+        inspect = ui->cbInspecaoJog->isChecked();
+    }
+    else
+        return;
+    drawWidgetTable(B_Value,C_Value,fim_op,inspect);
+}
+
 void MainWindow::on_btExcluir_clicked()
 {
     if(this->stateNow == PROG || (this->stateNow == JOG && ui->cbTeach->isChecked()))
@@ -561,23 +671,35 @@ void MainWindow::on_btLimpar_clicked()
 {
     if(this->stateNow == PROG || (this->stateNow == JOG && ui->cbTeach->isChecked()))
     {
-        ui->programEditor->clear();
-        cellPtr = new QTableWidgetItem;
-        cellPtr->setText("TASK #");
-        ui->programEditor->setHorizontalHeaderItem(TASK, cellPtr);
-        cellPtr = new QTableWidgetItem;
-        cellPtr->setText("B");
-        ui->programEditor->setHorizontalHeaderItem(B_ANG, cellPtr);
-        cellPtr = new QTableWidgetItem;
-        cellPtr->setText("C");
-        ui->programEditor->setHorizontalHeaderItem(C_ANG, cellPtr);
-        cellPtr = new QTableWidgetItem;
-        cellPtr->setText("FIM OPERAÇÃO?");
-        ui->programEditor->setHorizontalHeaderItem(FIM_OP, cellPtr);
-        cellPtr = new QTableWidgetItem;
-        cellPtr->setText("INSPEÇÃO?");
-        ui->programEditor->setHorizontalHeaderItem(INSPECT, cellPtr);
+        clearWidgetTable();
     }
+}
+
+QJsonObject MainWindow::loadWidgetTable()
+{
+    QJsonArray arrayOfMovements;
+    ui->warningLog->append("Loading Data...");
+    //Varrendo todas as linhas
+    for(int i=0; i<ui->programEditor->rowCount(); i++)
+    {
+        //Varrendo todas as colunas exceto Task #
+        QJsonArray movement;
+        for(int j=1; j<ui->programEditor->columnCount(); j++)
+        {
+            if(ui->programEditor->item(i,j)->text().toLower() == "true")
+                movement.append(1);
+            else if(ui->programEditor->item(i,j)->text().toLower() == "false")
+                movement.append(0);
+            else
+                movement.append(ui->programEditor->item(i,j)->text().toDouble());
+        }
+        arrayOfMovements.append(movement);
+    }
+    QJsonObject senderObject{
+        {"mode","program"},
+        {"params",arrayOfMovements}
+    };
+    return senderObject;
 }
 
 void MainWindow::on_btCarregar_clicked()
@@ -587,28 +709,7 @@ void MainWindow::on_btCarregar_clicked()
         //O programa não é nulo
         if(ui->programEditor->rowCount() >= 1)
         {
-            QJsonArray arrayOfMovements;
-            ui->warningLog->append("Loading Data...");
-            //Varrendo todas as linhas
-            for(int i=0; i<ui->programEditor->rowCount(); i++)
-            {
-                //Varrendo todas as colunas exceto Task #
-                QJsonArray movement;
-                for(int j=1; j<ui->programEditor->columnCount(); j++)
-                {
-                    if(ui->programEditor->item(i,j)->text().toLower() == "true")
-                        movement.append(1);
-                    else if(ui->programEditor->item(i,j)->text().toLower() == "false")
-                        movement.append(0);
-                    else
-                        movement.append(ui->programEditor->item(i,j)->text().toDouble());
-                }
-                arrayOfMovements.append(movement);
-            }
-            QJsonObject senderObject{
-                {"mode","program"},
-                {"params",arrayOfMovements}
-            };
+            QJsonObject senderObject = loadWidgetTable();
             sendJsonThroughSocket(senderObject);
         }
         else

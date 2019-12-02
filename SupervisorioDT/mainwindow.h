@@ -24,6 +24,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonParseError>
+#include <QFileDialog>
+#include <QFile>
 #include <QMessageBox>
 #include "connectionprompt.h"
 
@@ -37,67 +39,69 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    //Construtor e Destrutor
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 public slots:
+    //Configurações de IP da janela externa.
     void saveIpConfiguration(QString IP);
     void savePortConfiguration(int port);
 
+    //Slots conectados a ações no menu dropdown.
+    void openFileAct();
+    void saveFileAct();
+    void aboutSupervisorio();
+
 private slots:
+
+    //Configurações de Conexão
     void on_btConfig_clicked();
-
     void onReadyRead();
-
-    void changeWindowState(int state);
-
-    void on_btConnect_clicked(bool checked);
-
-    void on_btLiga_clicked(bool checked);
-
-    void on_btProgramar_clicked(bool checked);
-
-    void on_btEstop_clicked(bool checked);
-
-    void on_btClearLog_clicked();
-
-    void on_btJogging_clicked(bool checked);
-
-    void on_btAuto_clicked(bool checked);
-
-    void on_btAddTarefa_clicked();
-
-    void on_btExcluir_clicked();
-
-    void on_btLimpar_clicked();
-
-    void on_cbFimOp_clicked(bool checked);
-
-    void on_cbInspecao_clicked(bool checked);
-
-    void on_cbFimOpJog_clicked(bool checked);
-
-    void on_cbInspecaoJog_toggled(bool checked);
-
+    //Wrappers Json para TCP/IP
     void sendJsonThroughSocket(QJsonObject obj);
-
     QJsonObject recieveJsonThroughSocket();
 
-    void on_btCarregar_clicked();
+    //Funções de arquivo
+    void saveJsonToFile(QJsonDocument doc);
+    QJsonDocument loadJsonFromFile();
 
+    //STATE MACHINE
+    void changeWindowState(int state);
+    void on_btConnect_clicked(bool checked);
+    void on_btLiga_clicked(bool checked);
+    void on_btProgramar_clicked(bool checked);
+    void on_btEstop_clicked(bool checked);
+    void on_btJogging_clicked(bool checked);
+    void on_btAuto_clicked(bool checked);
+
+    //Comandos Diretos para BBB
     void on_btHome_clicked(bool checked);
-
     void on_btGO_clicked();
-
+    void on_btCarregar_clicked();
     void on_btCycStart_clicked();
-
-    void on_homeMck_clicked();
-
-    void on_activePrgMck_clicked();
-
     void on_btAtualizar_clicked();
-
     void on_btAlterar_clicked();
+
+    //Funções do Warning Log
+    void on_btClearLog_clicked();
+
+    //Funções do editor de programa
+    void on_btAddTarefa_clicked();
+    void on_btExcluir_clicked();
+    void on_btLimpar_clicked();
+    void drawWidgetTable(double B_ang, double C_ang, bool fim_op, bool inspect);
+    QJsonObject loadWidgetTable();
+    void clearWidgetTable();
+    //Handler de parâmetros do editor de programa
+    void on_cbFimOp_clicked(bool checked);
+    void on_cbInspecao_clicked(bool checked);
+    void on_cbFimOpJog_clicked(bool checked);
+    void on_cbInspecaoJog_toggled(bool checked);
+
+    //Mocks (debug)
+    void on_homeMck_clicked();
+    void on_activePrgMck_clicked();
 
 private:
     Ui::MainWindow *ui;
