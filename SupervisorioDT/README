@@ -5,7 +5,11 @@ Progresso da Implementação:
 - Máquina de Estados;
 - Conexão TCP;
 - JsonFiles;
+- Carregar e Salvar programas;
+- Padronização e organização do .h e .cpp
+- Arquivos de configuração padrão (30%);
+- Adicionar parâmetro de velocidade para a UI (30%);
 - Intertravamento entre GUI e BBB (20%);
 - Suporte e ajuda ao usuário (0%);
-- Arquivos de configuração padrão (0%);
-- Carregar e Salvar programas (0%);
+
+
