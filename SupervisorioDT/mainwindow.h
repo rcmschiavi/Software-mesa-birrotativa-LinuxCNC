@@ -13,8 +13,9 @@
 #define TASK 0
 #define B_ANG 1
 #define C_ANG 2
-#define FIM_OP 3
-#define INSPECT 4
+#define VELOC 3
+#define FIM_OP 4
+#define INSPECT 5
 
 #include <QMainWindow>
 #include <QTcpSocket>
@@ -90,7 +91,7 @@ private slots:
     void on_btAddTarefa_clicked();
     void on_btExcluir_clicked();
     void on_btLimpar_clicked();
-    void drawWidgetTable(double B_ang, double C_ang, bool fim_op, bool inspect);
+    void drawWidgetTable(double B_ang, double C_ang, double veloc, bool fim_op, bool inspect);
     QJsonObject loadWidgetTable();
     void clearWidgetTable();
     //Handler de parâmetros do editor de programa
@@ -131,6 +132,7 @@ private:
     //Program Editor Variables
     int editorLinePointer = 0;
     QTableWidgetItem *cellPtr;
+    bool clearOcurred = false;
 
     //Inspection Variables
     int standardCalibration = 0;

@@ -350,8 +350,8 @@
     <widget class="QLabel" name="label_4">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>30</y>
+       <x>10</x>
+       <y>20</y>
        <width>21</width>
        <height>21</height>
       </rect>
@@ -366,8 +366,8 @@
     <widget class="QLabel" name="label_5">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>30</y>
+       <x>90</x>
+       <y>20</y>
        <width>41</width>
        <height>20</height>
       </rect>
@@ -382,8 +382,8 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>230</x>
-       <y>30</y>
+       <x>220</x>
+       <y>20</y>
        <width>41</width>
        <height>20</height>
       </rect>
@@ -398,8 +398,8 @@
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
-       <x>150</x>
-       <y>30</y>
+       <x>140</x>
+       <y>20</y>
        <width>21</width>
        <height>21</height>
       </rect>
@@ -440,8 +440,8 @@
     <widget class="QDoubleSpinBox" name="sbBProg">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>30</y>
+       <x>30</x>
+       <y>20</y>
        <width>62</width>
        <height>22</height>
       </rect>
@@ -450,11 +450,56 @@
     <widget class="QDoubleSpinBox" name="sbCProg">
      <property name="geometry">
       <rect>
-       <x>170</x>
-       <y>30</y>
+       <x>160</x>
+       <y>20</y>
        <width>62</width>
        <height>22</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="sbVelocidade">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>50</y>
+       <width>62</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <double>0.100000000000000</double>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_23">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>50</y>
+       <width>71</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Velocidade:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_25">
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>50</y>
+       <width>41</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>rad/s</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>
@@ -479,8 +524,8 @@
     <widget class="QLabel" name="label_8">
      <property name="geometry">
       <rect>
-       <x>20</x>
-       <y>30</y>
+       <x>10</x>
+       <y>20</y>
        <width>21</width>
        <height>21</height>
       </rect>
@@ -495,8 +540,8 @@
     <widget class="QLabel" name="label_9">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>30</y>
+       <x>90</x>
+       <y>20</y>
        <width>41</width>
        <height>20</height>
       </rect>
@@ -511,8 +556,8 @@
     <widget class="QLabel" name="label_10">
      <property name="geometry">
       <rect>
-       <x>230</x>
-       <y>30</y>
+       <x>220</x>
+       <y>20</y>
        <width>41</width>
        <height>20</height>
       </rect>
@@ -527,8 +572,8 @@
     <widget class="QLabel" name="label_11">
      <property name="geometry">
       <rect>
-       <x>150</x>
-       <y>30</y>
+       <x>140</x>
+       <y>20</y>
        <width>21</width>
        <height>21</height>
       </rect>
@@ -543,7 +588,7 @@
     <widget class="QPushButton" name="btGO">
      <property name="geometry">
       <rect>
-       <x>290</x>
+       <x>360</x>
        <y>20</y>
        <width>41</width>
        <height>41</height>
@@ -608,8 +653,8 @@
     <widget class="QDoubleSpinBox" name="sbBJog">
      <property name="geometry">
       <rect>
-       <x>40</x>
-       <y>30</y>
+       <x>30</x>
+       <y>20</y>
        <width>62</width>
        <height>22</height>
       </rect>
@@ -618,11 +663,56 @@
     <widget class="QDoubleSpinBox" name="sbCJog">
      <property name="geometry">
       <rect>
-       <x>170</x>
-       <y>30</y>
+       <x>160</x>
+       <y>20</y>
        <width>62</width>
        <height>22</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QDoubleSpinBox" name="sbVelocidadeJog">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>50</y>
+       <width>62</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="minimum">
+      <double>0.100000000000000</double>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_26">
+     <property name="geometry">
+      <rect>
+       <x>220</x>
+       <y>50</y>
+       <width>41</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>rad/s</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_28">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>50</y>
+       <width>71</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Velocidade:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>
@@ -1384,6 +1474,12 @@
        <height>371</height>
       </rect>
      </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="frameShape">
       <enum>QFrame::Box</enum>
      </property>
@@ -1412,8 +1508,11 @@
       <number>1</number>
      </property>
      <property name="columnCount">
-      <number>5</number>
+      <number>6</number>
      </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>85</number>
+     </attribute>
      <attribute name="verticalHeaderVisible">
       <bool>false</bool>
      </attribute>
@@ -1435,37 +1534,62 @@
      </column>
      <column>
       <property name="text">
-       <string>FIM OPERAÇÃO?</string>
+       <string>VELOC.</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>INSPEÇÃO?</string>
+       <string>FIM OP?</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>INSPECT?</string>
       </property>
      </column>
      <item row="0" column="0">
       <property name="text">
        <string>1</string>
       </property>
+      <property name="textAlignment">
+       <set>AlignLeading|AlignVCenter</set>
+      </property>
      </item>
      <item row="0" column="1">
       <property name="text">
        <string>0</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignLeading|AlignVCenter</set>
       </property>
      </item>
      <item row="0" column="2">
       <property name="text">
        <string>0</string>
       </property>
+      <property name="textAlignment">
+       <set>AlignLeading|AlignVCenter</set>
+      </property>
      </item>
      <item row="0" column="3">
       <property name="text">
-       <string>FALSE</string>
+       <string>1</string>
       </property>
      </item>
      <item row="0" column="4">
       <property name="text">
        <string>FALSE</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignLeading|AlignVCenter</set>
+      </property>
+     </item>
+     <item row="0" column="5">
+      <property name="text">
+       <string>FALSE</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignLeading|AlignVCenter</set>
       </property>
      </item>
     </widget>

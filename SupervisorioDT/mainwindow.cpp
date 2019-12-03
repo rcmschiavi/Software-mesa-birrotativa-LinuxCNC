@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionAbrir_Programa, SIGNAL(triggered()), this, SLOT(openFileAct()));
     connect(ui->actionSalvar_Programa, SIGNAL(triggered()), this, SLOT(saveFileAct()));
     connect(ui->actionSobre, SIGNAL(triggered()),this,SLOT(aboutSupervisorio()));
-
 }
 
 MainWindow::~MainWindow()
@@ -57,6 +56,7 @@ void MainWindow::openFileAct()
         QJsonArray movement;
         double B_ang;
         double C_ang;
+        double veloc;
         bool fim_op;
         bool inspect;
         QJsonArray arrayOfMovements = doc.object().value("params").toArray();
@@ -67,9 +67,10 @@ void MainWindow::openFileAct()
             movement = arrayOfMovements.at(i).toArray();
             B_ang = movement.at(0).toDouble();
             C_ang = movement.at(1).toDouble();
-            fim_op = movement.at(2).toBool();
-            inspect = movement.at(3).toBool();
-            drawWidgetTable(B_ang,C_ang,fim_op,inspect);
+            veloc = movement.at(2).toDouble();
+            fim_op = movement.at(3).toBool();
+            inspect = movement.at(4).toBool();
+            drawWidgetTable(B_ang,C_ang,veloc,fim_op,inspect);
             }
             catch(...)
             {
@@ -78,6 +79,7 @@ void MainWindow::openFileAct()
                 return;
             }
         }
+        ui->warningLog->append("Programa carregado com sucesso.");
     }
     else if(ret == QMessageBox::Cancel)
     {
@@ -91,6 +93,7 @@ void MainWindow::saveFileAct()
     QJsonDocument doc;
     doc.setObject(programaObj);
     saveJsonToFile(doc);
+    ui->warningLog->append("Programa salvo com sucesso.");
 }
 
 void MainWindow::aboutSupervisorio()
@@ -425,7 +428,8 @@ void MainWindow::on_btAuto_clicked(bool checked)
         }
         else
         {
-            ui->warningLog->append("Favor fazer a rotina de home.");
+            if(!this->homed)
+                ui->warningLog->append("Favor fazer a rotina de home.");
             ui->btAuto->setChecked(false);
         }
     }
@@ -469,6 +473,7 @@ void MainWindow::on_btGO_clicked()
         QJsonArray movement;
         movement.append(ui->sbBJog->value());
         movement.append(ui->sbCJog->value());
+        movement.append(ui->sbVelocidadeJog->value());
         //FimOP e Inspect são sempre falsos no modo Jog.
         movement.append(0);
         movement.append(0);
@@ -551,10 +556,16 @@ void MainWindow::on_cbInspecaoJog_toggled(bool checked)
 
 //=============================================PROGRAM EDITOR===============================
 
-void MainWindow::drawWidgetTable(double B_ang, double C_ang, bool fim_op, bool inspect)
+void MainWindow::drawWidgetTable(double B_ang, double C_ang, double veloc, bool fim_op, bool inspect)
 {
     int auxPointer = editorLinePointer;
-    editorLinePointer = ui->programEditor->currentRow();
+    if(clearOcurred)
+    {
+        editorLinePointer = ui->programEditor->currentRow();
+        this->clearOcurred=false;
+    }
+    else
+        editorLinePointer = ui->programEditor->currentRow()+1;
     ui->programEditor->insertRow(editorLinePointer);
     cellPtr = new QTableWidgetItem;
     cellPtr->setText(QString::number(editorLinePointer));
@@ -565,6 +576,9 @@ void MainWindow::drawWidgetTable(double B_ang, double C_ang, bool fim_op, bool i
     cellPtr = new QTableWidgetItem;
     cellPtr->setText(QString::number(C_ang));
     ui->programEditor->setItem(editorLinePointer,C_ANG,cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText(QString::number(veloc));
+    ui->programEditor->setItem(editorLinePointer,VELOC,cellPtr);
     if(fim_op)
     {
         cellPtr = new QTableWidgetItem;
@@ -613,13 +627,17 @@ void MainWindow::clearWidgetTable()
     cellPtr->setText("C");
     ui->programEditor->setHorizontalHeaderItem(C_ANG, cellPtr);
     cellPtr = new QTableWidgetItem;
-    cellPtr->setText("FIM OPERAÇÃO?");
+    cellPtr->setText("VELOC.");
+    ui->programEditor->setHorizontalHeaderItem(VELOC, cellPtr);
+    cellPtr = new QTableWidgetItem;
+    cellPtr->setText("FIM OP?");
     ui->programEditor->setHorizontalHeaderItem(FIM_OP, cellPtr);
     cellPtr = new QTableWidgetItem;
-    cellPtr->setText("INSPEÇÃO?");
+    cellPtr->setText("INSPECT?");
     ui->programEditor->setHorizontalHeaderItem(INSPECT, cellPtr);
     ui->programEditor->setCurrentCell(0,0);
-    drawWidgetTable(0,0,false,false);
+    this->clearOcurred = true;
+    drawWidgetTable(0,0,1,false,false);
     ui->programEditor->setRowCount(1);
 }
 
@@ -627,12 +645,14 @@ void MainWindow::on_btAddTarefa_clicked()
 {
     double B_Value;
     double C_Value;
+    double veloc;
     bool fim_op;
     bool inspect;
     if(this->stateNow == PROG)
     {
         B_Value = ui->sbBProg->value();
         C_Value = ui->sbCProg->value();
+        veloc = ui->sbVelocidade->value();
         fim_op = ui->cbFimOp->isChecked();
         inspect = ui->cbInspecao->isChecked();
     }
@@ -640,12 +660,13 @@ void MainWindow::on_btAddTarefa_clicked()
     {
         B_Value = ui->sbBJog->value();
         C_Value = ui->sbCJog->value();
+        veloc = ui->sbVelocidadeJog->value();
         fim_op = ui->cbFimOpJog->isChecked();
         inspect = ui->cbInspecaoJog->isChecked();
     }
     else
         return;
-    drawWidgetTable(B_Value,C_Value,fim_op,inspect);
+    drawWidgetTable(B_Value,C_Value,veloc,fim_op,inspect);
 }
 
 void MainWindow::on_btExcluir_clicked()
