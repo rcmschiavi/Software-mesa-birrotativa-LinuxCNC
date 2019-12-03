@@ -9,7 +9,7 @@ Ainda não foi implementada a queue que fará a comunicação entre a thread pri
 '''
 from threading import Thread
 import socket
-import time, json, os
+import time, json, os, sys
 from collections import OrderedDict
 
 class Connection:
@@ -17,7 +17,7 @@ class Connection:
     def __init__(self, q):
         self.cur_path = os.path.dirname(__file__)
         self.q = q
-        self.callback_latency = 5
+        self.callback_latency = 2
         self.connection = None
         self.i = 0
         self.client_address = None
@@ -30,8 +30,9 @@ class Connection:
 
 
     def start_socket(self):
+        i=0
         # A conexão é iniciada e reiniciada sempre que se fecha por algum motivo
-        while True:
+        while i<1:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_address = ('10.0.0.2', 8001)
             self.sock.bind(self.server_address)
@@ -41,6 +42,9 @@ class Connection:
             time.sleep(1)
             self.connection.close()
             time.sleep(4)
+            i+=1
+        print "Fim da conexão"
+
 
     def wait_connection(self):
         print "Conectando"
@@ -57,30 +61,31 @@ class Connection:
                     if self.data:
                         print self.data
                         self.i += 1
+                        self.q.put(self.data)
                         self.callback("200")
                     else:
                         #Caso a conexão seja perdida, finaliza esse laço e entra no laço de reconectar
                         break
                 except Exception as e:
                     print ("Erro 1 waitmessage: " + str(e))
-                    if not self.q.empty():
-                        self.data = self.q.get()
-                        print(self.data)
-                    else:
-                        print "q is empty"
-                        self.data=""
+                    self.data=""
                     self.callback(self.data)
         except Exception as e:
             print ("Erro 2 waitmessage: " + str(e))
 
     def callback(self, data):
+        file_address = self.cur_path + '/status_data.json'
         if data == "":
             try:
-                t_i = time.time()
-                with open(self.cur_path + '/status_data.json') as json_file:
-                    data = json.load(json_file)
-                t_f = time.time()
-                self.connection.sendall(str(data) + "Tempo: abertura json " + str(t_f - t_i) + "\n")
+                if os.stat(file_address).st_size!=0:
+                    t_i = time.time()
+                    with open(file_address, 'r+') as json_file:
+                        data = json.load(json_file)
+                        json_file.truncate(0) #Limpa o arquivo para só enviar quando há modificação
+                    t_f = time.time()
+                    self.connection.sendall(str(data) + "Tempo: abertura json " + str(t_f - t_i) + "\n")
+                else:
+                    print "File is empty"
             except Exception as e:
                 print ("Erro callback: "+str(e))
         else:
