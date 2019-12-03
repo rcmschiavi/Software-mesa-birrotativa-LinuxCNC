@@ -6,10 +6,12 @@ Progresso da Implementação:
 - Conexão TCP;
 - JsonFiles;
 - Carregar e Salvar programas;
-- Padronização e organização do .h e .cpp
-- Arquivos de configuração padrão (30%);
-- Adicionar parâmetro de velocidade para a UI (30%);
-- Intertravamento entre GUI e BBB (20%);
-- Suporte e ajuda ao usuário (0%);
+- Padronização e organização do .h e .cpp;
+- Adicionar parâmetro de velocidade para a UI;
+- Intertravamento entre GUI e BBB (20%); - Prioridade Alta
+- Testes de Conexão e Comunicação entre BBB e GUI (0%) - Prioridade Alta
+- Sistema de envio de Imagens e Streaming (0%) - Prioridade Alta
+- Arquivos de configuração padrão (50%); - Baixa Prioridade
+- Suporte e ajuda ao usuário (0%); - Baixa Prioridade
 
 
