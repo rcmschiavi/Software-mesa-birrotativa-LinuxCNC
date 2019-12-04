@@ -14,4 +14,4 @@ Processo da implementação:
 
 ### Fluxograma
 
-![Floxugrama](Docs/fluxograma.jpg)
+![Fluxograma](Docs/fluxograma.jpg)
