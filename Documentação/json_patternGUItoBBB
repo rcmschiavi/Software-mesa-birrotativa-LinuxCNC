@@ -1,29 +1,35 @@
 [{
+   //feito
     "mode": "HOME",
-    "params": {0}
+    "params": 0
   },
   {
+    //feito
     "mode": "ESTOP",
-    "params": {0}
+    "params": 0
   },
   {
-    "mode": "progStop",
-    "params": {0}
+    //feito
+    "mode": "EXTESTOP",
+    "params": 0
   },
   {
-    "mode": "cycStart",
-    "params": {0}
+    "mode": "CYCSTART",
+    "params": 0
   },
   {
-    "mode": "program",
+    //operation 0-Carregando Programa, 1-Requisitando Programa, -1 Deletando programa ativo
+    "mode": "PROGRAM",
+    "operation":0,
     "params": [[0.0,10.0,2.0,1,0],[10.0,20.0,5.0,1,0],...,[10.0,10.0,2.0]]
   },
   {
-    "mode": "jog",
+    "mode": "JOG",
     "params": [10.0,25.0,2.0]
   },
   {
-    "mode": "inspection",
+    //DBCP, TOL, Padrão Calib
+    "mode": "INSPECTION",
     "params": [15.0,0.1,0]
     }
   }
