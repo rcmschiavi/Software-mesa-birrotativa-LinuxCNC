@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#define EXTESTOP -2
 #define ESTOP -1
 #define STANDBY 0
 #define CONNECTED_STANDBY 1
@@ -64,6 +65,7 @@ private slots:
     //Configurações de Conexão
     void on_btConfig_clicked();
     void onReadyRead();
+
     //Wrappers Json para TCP/IP
     void sendJsonThroughSocket(QJsonObject obj);
     QJsonObject recieveJsonThroughSocket();
@@ -71,8 +73,10 @@ private slots:
     //Funções de arquivo
     void saveJsonToFile(QJsonDocument doc);
     QJsonDocument loadJsonFromFile();
+    void recieveJsonProgramFromBBB(QJsonObject program);
 
     //STATE MACHINE
+    void changeWindowStatus();
     void changeWindowState(int state);
     void on_btConnect_clicked(bool checked);
     void on_btLiga_clicked(bool checked);

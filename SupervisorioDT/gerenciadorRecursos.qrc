@@ -11,6 +11,7 @@
         <file>resources/gear_in.ico</file>
         <file>resources/joystick.ico</file>
         <file>resources/script_add.ico</file>
+        <file>resources/stop.ico</file>
     </qresource>
     <qresource prefix="/recursos/images">
         <file>resources/IFSCLogo.png</file>

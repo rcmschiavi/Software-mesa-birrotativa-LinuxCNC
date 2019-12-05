@@ -30,7 +30,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->accept();
     }
     else
+    {
+        ui->warningLog->append("Favor desconectar o sistema com segurança antes de fechar.");
         event->ignore(); // Don't close.
+    }
 }
 //=========================================FILE MANAGEMENT==========================================
 
@@ -107,6 +110,46 @@ void MainWindow::saveFileAct()
     ui->warningLog->append("Programa salvo com sucesso.");
 }
 
+void MainWindow::recieveJsonProgramFromBBB(QJsonObject program)
+{
+    int ret = QMessageBox::warning(this,"Aviso!","Prosseguir irá apagar o programa atual!", QMessageBox::Ok|QMessageBox::Cancel);
+    if(ret == QMessageBox::Ok)
+    {
+        QJsonArray movement;
+        double B_ang;
+        double C_ang;
+        double veloc;
+        bool fim_op;
+        bool inspect;
+        QJsonArray arrayOfMovements = program.value("params").toArray();
+        clearWidgetTable();
+        for(int i=0; i<arrayOfMovements.size(); i++)
+        {
+            try{
+                movement = arrayOfMovements.at(i).toArray();
+                B_ang = movement.at(0).toDouble();
+                C_ang = movement.at(1).toDouble();
+                veloc = movement.at(2).toDouble();
+                fim_op = movement.at(3).toBool();
+                inspect = movement.at(4).toBool();
+                drawWidgetTable(B_ang,C_ang,veloc,fim_op,inspect);
+            }
+            catch(...)
+            {
+                ui->warningLog->append("Erro na leitura do arquivo, formato inesperado.");
+                clearWidgetTable();
+                return;
+            }
+        }
+        ui->warningLog->append("Programa carregado com sucesso.");
+    }
+    else if(ret == QMessageBox::Cancel)
+    {
+        return;
+    }
+}
+
+//==============================================SUPORTE E USER=====================================
 void MainWindow::aboutSupervisorio()
 {
     QMessageBox::about(this,"Sobre",tr("Supervisório Dream Team\n\n""Interface desenvolvida para o controle de uma\n"
@@ -162,18 +205,106 @@ void MainWindow::onReadyRead()
 {
     recieverObject = recieveJsonThroughSocket();
     if(recieverObject.isEmpty())
+    {
+        ui->warningLog->append("Erro de formato JSON");
         return;
+    }
+    if(recieverObject.contains("mode"))
+    {
+        QString keyValue = recieverObject.value("mode").toString();
+        if(keyValue == "EXTESTOP")
+        {
+            //Adicionar testes de valor, para reiniciar a máquina de estados do supervisório
+            changeWindowState(EXTESTOP);
+        }
+        if(keyValue == "STATUS")
+        {
+            QJsonArray statusArray = recieverObject.value("params").toArray();
+            homed = statusArray.at(0).toBool();
+            homing = statusArray.at(1).toBool();
+            turnedOn = statusArray.at(2).toBool();
+            programActive = statusArray.at(3).toBool();
+            programExec = statusArray.at(4).toBool();
+            taskExec = statusArray.at(5).toBool();
+            inspection = statusArray.at(6).toBool();
+            changeWindowStatus();
+        }
+        if(keyValue == "INSPECTION")
+        {
+            int param = recieverObject.value("params").toInt();
+            if(param == 1)
+            {
+                ui->warningLog->append("Calibração terminada");
+            }
+            if(param == -1)
+            {
+                ui->warningLog->append("Erro de calibração");
+            }
+        }
+        if(keyValue == "PROGRAM")
+        {
+            ui->warningLog->append("Programa Receido");
+            recieveJsonProgramFromBBB(recieverObject);
+        }
+    }
     //Aqui serão inseridos os parsers para absorver os dados JSON recebidos pela GUI.
 }
 
 //=============================================STATE MACHINE===============================
+void MainWindow::changeWindowStatus()
+{
+    if(homed)
+        ui->stateHomed->setText("SIM");
+    else
+        ui->stateHomed->setText("NÃO");
+    if(turnedOn)
+        ui->stateTurnedOn->setText("SIM");
+    else
+        ui->stateTurnedOn->setText("NÃO");
+    if(programActive)
+        ui->stateProgramActive->setText("SIM");
+    else
+        ui->stateProgramActive->setText("NÃO");
+    if(programExec)
+        ui->stateProgramExec->setText("SIM");
+    else
+        ui->stateProgramExec->setText("NÃO");
+    if(taskExec)
+        ui->stateTaskExec->setText("SIM");
+    else
+        ui->stateTaskExec->setText("NÃO");
+    if(inspection)
+        ui->stateInspection->setText("SIM");
+    else
+        ui->stateInspection->setText("NÃO");
+}
+
 
 void MainWindow::changeWindowState(int state)
 {
+    QJsonObject senderObject;
     //Função que prepara a máquina de estados da janela.
     switch(state)
     {
+    case EXTESTOP:
+        senderObject = {{"mode","EXTESTOP"},{"params",1}};
+        sendJsonThroughSocket(senderObject);
+        ui->btEstop->setEnabled(false);
+        ui->btLiga->setEnabled(false);
+        ui->btHome->setEnabled(false);
+        ui->groupJog->setEnabled(false);
+        ui->groupProg->setEnabled(false);
+        ui->groupOpMode->setEnabled(false);
+        ui->groupInspect->setEnabled(false);
+        ui->groupStatus->setEnabled(true);
+        ui->groupEditor->setEnabled(false);
+        ui->cameraImage->setEnabled(false);
+        this->stateNow = EXTESTOP;
+        ui->stateEstado->setText("EXTESTOP");
+        break;
     case ESTOP:
+        senderObject = {{"mode","ESTOP"},{"params",0}};
+        sendJsonThroughSocket(senderObject);
         ui->btEstop->setEnabled(true);
         ui->btLiga->setEnabled(true);
         ui->btHome->setEnabled(false);
@@ -183,6 +314,7 @@ void MainWindow::changeWindowState(int state)
         ui->groupInspect->setEnabled(false);
         ui->groupStatus->setEnabled(true);
         ui->groupEditor->setEnabled(false);
+        ui->groupProgCtrl->setEnabled(false);
         ui->cameraImage->setEnabled(true);
         this->stateNow = ESTOP;
         ui->stateEstado->setText("ESTOP");
@@ -198,6 +330,7 @@ void MainWindow::changeWindowState(int state)
         ui->groupStatus->setEnabled(false);
         ui->groupEditor->setEnabled(false);
         ui->cameraImage->setEnabled(false);
+        ui->btExtEstop->setEnabled(false);
         this->stateNow = STANDBY;
         ui->stateEstado->setText("STANDBY");
         ui->stateConnected->setText("NÃO");
@@ -216,6 +349,7 @@ void MainWindow::changeWindowState(int state)
         ui->groupStatus->setEnabled(true);
         ui->groupEditor->setEnabled(false);
         ui->cameraImage->setEnabled(true);
+        ui->btExtEstop->setEnabled(true);
         this->stateNow = CONNECTED_STANDBY;
         ui->stateEstado->setText("CONECTADO");
         ui->stateConnected->setText("SIM");
@@ -257,6 +391,7 @@ void MainWindow::changeWindowState(int state)
         ui->btHome->setEnabled(false);
         ui->groupJog->setEnabled(false);
         ui->groupProg->setEnabled(true);
+        ui->groupProgCtrl->setEnabled(true);
         ui->groupOpMode->setEnabled(true);
         ui->groupInspect->setEnabled(true);
         ui->groupStatus->setEnabled(true);
@@ -308,7 +443,6 @@ void MainWindow::on_btConnect_clicked(bool checked)
            this->stateNow = CONNECTED_STANDBY;
            ui->stateConnected->setText("SIM");
            changeWindowState(CONNECTED_STANDBY);
-
        }
        else
        {
@@ -454,11 +588,10 @@ void MainWindow::on_btHome_clicked(bool checked)
     if(checked)
     {
         //Só executa o homing durante JOG ou AUTO
-        if(this->stateNow == JOG || this->stateNow == AUTO)
+        if((this->stateNow == JOG || this->stateNow == AUTO) && !this->taskExec && !this->programExec && !this->homing)
         {
             //Define o estado da BBB como homing (só volta a false quando a BBB retornar o status homing ok
-            this->homing = true;
-            QJsonObject senderObject{{"mode","home"},{"params",0}};
+            QJsonObject senderObject{{"mode","HOME"},{"params",0}};
             sendJsonThroughSocket(senderObject);
         }
         else
@@ -473,21 +606,23 @@ void MainWindow::on_btHome_clicked(bool checked)
 
 void MainWindow::on_btGO_clicked()
 {
-    if(this->stateNow == JOG && this->homed)
+    if(this->stateNow == JOG && this->homed && !this->taskExec && !this->programExec)
     {
         QJsonArray movement;
         movement.append(ui->sbBJog->value());
         movement.append(ui->sbCJog->value());
         movement.append(ui->sbVelocidadeJog->value());
-        //FimOP e Inspect são sempre falsos no modo Jog.
-        movement.append(0);
-        movement.append(0);
-        QJsonObject senderObject{{"mode","jog"},{"params",movement}};
+        QJsonObject senderObject{{"mode","JOG"},{"params",movement}};
         sendJsonThroughSocket(senderObject);
     }
-    else if(this->stateNow == JOG && !this->homed)
+    else
     {
-        ui->warningLog->append("Favor fazer a rotina de Home.");
+        if(this->programExec)
+            ui->warningLog->append("Programa em Execução");
+        if(this->taskExec)
+            ui->warningLog->append("Aguarde a execução da tarefa");
+        if(!this->homed)
+            ui->warningLog->append("Favor fazer a rotina de Home.");
     }
 }
 
@@ -497,11 +632,18 @@ void MainWindow::on_btCycStart_clicked()
     {
         this->stateNow = AUTO_RUN;
         changeWindowState(AUTO_RUN);
-        QJsonObject senderObject{{"mode","cycStart"},{"params",0}};
+        QJsonObject senderObject{{"mode","CYCSTART"},{"params",0}};
         sendJsonThroughSocket(senderObject);
     }
     else
-        ui->warningLog->append("Checar home, programa ativo e máquina parada.");
+        if(!this->programActive)
+            ui->warningLog->append("Não há programa ativo");
+        if(this->programExec)
+            ui->warningLog->append("Programa em Execução");
+        if(this->taskExec)
+            ui->warningLog->append("Aguarde a execução da tarefa");
+        if(!this->homed)
+            ui->warningLog->append("Favor fazer a rotina de Home.");
 }
 
 
@@ -510,9 +652,9 @@ void MainWindow::on_btAtualizar_clicked()
     QJsonArray paramArray;
     paramArray.append(ui->dsbDBCP->value());
     paramArray.append(ui->dsbTol->value());
-    //Se o valor de calibração for zero, não alterar o valor padrão.
+    //Valor 0 significa que não há mudança no padrão de calibração.
     paramArray.append(0);
-    QJsonObject senderObject{{"mode","inspection"},{"params",paramArray}};
+    QJsonObject senderObject{{"mode","INSPECTION"},{"params",paramArray}};
     sendJsonThroughSocket(senderObject);
 }
 
@@ -528,7 +670,7 @@ void MainWindow::on_btAlterar_clicked()
        paramArray.append(ui->dsbDBCP->value());
        paramArray.append(ui->dsbTol->value());
        paramArray.append(ui->sbCalib->value());
-       QJsonObject senderObject{{"mode","inspection"},{"params", paramArray}};
+       QJsonObject senderObject{{"mode","INSPECTION"},{"params", paramArray}};
    }
    else if(ret == QMessageBox::Discard)
        return;
@@ -722,7 +864,7 @@ QJsonObject MainWindow::loadWidgetTable()
         arrayOfMovements.append(movement);
     }
     QJsonObject senderObject{
-        {"mode","program"},
+        {"mode","PROGRAM"},
         {"params",arrayOfMovements}
     };
     return senderObject;
