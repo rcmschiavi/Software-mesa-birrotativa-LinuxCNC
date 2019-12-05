@@ -45,8 +45,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/cancel.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/cancel.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/cancel.ico</normaloff>:/recursos/interfaceIcons/resources/cancel.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -77,8 +77,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/tick_octagon.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/tick_octagon.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/tick_octagon.ico</normaloff>:/recursos/interfaceIcons/resources/tick_octagon.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -109,8 +109,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/house_go.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/house_go.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/house_go.ico</normaloff>:/recursos/interfaceIcons/resources/house_go.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -138,8 +138,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/wrench.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/wrench.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/wrench.ico</normaloff>:/recursos/interfaceIcons/resources/wrench.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -167,8 +167,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/connect.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/connect.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/connect.ico</normaloff>:/recursos/interfaceIcons/resources/connect.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -215,8 +215,8 @@
       <string>Programar</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/script_add.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/script_add.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/script_add.ico</normaloff>:/recursos/interfaceIcons/resources/script_add.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -257,8 +257,8 @@
       <string>Programar</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/gear_in.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/gear_in.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/gear_in.ico</normaloff>:/recursos/interfaceIcons/resources/gear_in.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -299,8 +299,8 @@
       <string>Programar</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/joystick.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/joystick.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/joystick.ico</normaloff>:/recursos/interfaceIcons/resources/joystick.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -1252,7 +1252,7 @@
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap>../IFSCLogo.png</pixmap>
+     <pixmap resource="gerenciadorRecursos.qrc">:/recursos/images/resources/IFSCLogo.png</pixmap>
     </property>
     <property name="scaledContents">
      <bool>true</bool>
@@ -1339,8 +1339,8 @@
       <string>...</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/script_go.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/script_go.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/script_go.ico</normaloff>:/recursos/interfaceIcons/resources/script_go.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -1365,8 +1365,8 @@
       <string>Cycle Start</string>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/tick_octagon_frame.ico</normaloff>../../../../PROG/Icones gratuitos/free_icons-3.9.2-ico/32x32_Ico/tick_octagon_frame.ico</iconset>
+      <iconset resource="gerenciadorRecursos.qrc">
+       <normaloff>:/recursos/interfaceIcons/resources/tick_octagon_frame.ico</normaloff>:/recursos/interfaceIcons/resources/tick_octagon_frame.ico</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -1676,6 +1676,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="gerenciadorRecursos.qrc"/>
+ </resources>
  <connections/>
 </ui>

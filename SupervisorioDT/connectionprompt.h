@@ -13,7 +13,7 @@ class ConnectionPrompt : public QDialog
     Q_OBJECT
 
 public:
-    explicit ConnectionPrompt(QWidget *parent = nullptr);
+    explicit ConnectionPrompt(QWidget *parent = nullptr, QString oldip="127.0.0.1", int oldport=10000);
     ~ConnectionPrompt();
 
 private slots:
@@ -27,6 +27,8 @@ signals:
 
 private:
     Ui::ConnectionPrompt *ui;
+    QString lastip;
+    int lastport;
 };
 
 #endif // CONNECTIONPROMPT_H

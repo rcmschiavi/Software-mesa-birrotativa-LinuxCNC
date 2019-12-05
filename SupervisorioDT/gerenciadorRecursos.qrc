@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/recursos/interfaceIcons">
+        <file>resources/cancel.ico</file>
+        <file>resources/connect.ico</file>
+        <file>resources/house_go.ico</file>
+        <file>resources/script_delete.ico</file>
+        <file>resources/script_go.ico</file>
+        <file>resources/tick_octagon.ico</file>
+        <file>resources/tick_octagon_frame.ico</file>
+        <file>resources/wrench.ico</file>
+        <file>resources/gear_in.ico</file>
+        <file>resources/joystick.ico</file>
+        <file>resources/script_add.ico</file>
+    </qresource>
+    <qresource prefix="/recursos/images">
+        <file>resources/IFSCLogo.png</file>
+    </qresource>
+    <qresource prefix="/recursos/inifiles"/>
+</RCC>

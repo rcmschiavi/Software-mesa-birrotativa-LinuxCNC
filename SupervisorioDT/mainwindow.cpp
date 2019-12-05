@@ -5,9 +5,10 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    this->connectionWindow = new ConnectionPrompt(this);
-    this->tcpSocket = new QTcpSocket();
     ui->setupUi(this);
+    this->connectionWindow = new ConnectionPrompt(this, beagleBoneIP, beagleBonePort);
+    this->tcpSocket = new QTcpSocket();
+
     //Conexão de sinais e slots entre a janela principal e a janela de configuração
     connect(this->connectionWindow, SIGNAL(updateIP(QString)), this, SLOT(saveIpConfiguration(QString)));
     connect(this->connectionWindow, SIGNAL(updatePort(int)), this, SLOT(savePortConfiguration(int)));
@@ -21,6 +22,16 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//=========================================CLOSE EVENT==============================================
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (this->stateNow == STANDBY)
+    {
+        event->accept();
+    }
+    else
+        event->ignore(); // Don't close.
+}
 //=========================================FILE MANAGEMENT==========================================
 
 void MainWindow::saveJsonToFile(QJsonDocument doc)
@@ -297,6 +308,7 @@ void MainWindow::on_btConnect_clicked(bool checked)
            this->stateNow = CONNECTED_STANDBY;
            ui->stateConnected->setText("SIM");
            changeWindowState(CONNECTED_STANDBY);
+
        }
        else
        {

@@ -28,6 +28,8 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QMessageBox>
+#include <QSettings>
+#include <QCloseEvent>
 #include "connectionprompt.h"
 
 
@@ -45,6 +47,9 @@ public:
     ~MainWindow();
 
 public slots:
+    //Close Event
+    void closeEvent(QCloseEvent *event);
+
     //Configurações de IP da janela externa.
     void saveIpConfiguration(QString IP);
     void savePortConfiguration(int port);
