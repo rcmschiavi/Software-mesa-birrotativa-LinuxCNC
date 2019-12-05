@@ -134,14 +134,9 @@ void MainWindow::sendJsonThroughSocket(const QJsonObject obj)
 
 QJsonObject MainWindow::recieveJsonThroughSocket()
 {
-   QJsonParseError parseError;
-   QJsonDocument doc = QJsonDocument::fromJson(tcpSocket->readAll(), &parseError);
-   if(parseError.error == QJsonParseError::NoError)
-   {
-       ui->warningLog->append("Erro na conversão Json");
-       QJsonObject nulo;
-       return nulo;
-   }
+   QString rawData = QString(tcpSocket->readAll());
+   QByteArray encodedData = rawData.toUtf8();
+   QJsonDocument doc = QJsonDocument::fromJson(encodedData);
    QJsonObject obj = doc.object();
    return obj;
 }
@@ -292,42 +287,40 @@ void MainWindow::changeWindowState(int state)
 
 void MainWindow::on_btConnect_clicked(bool checked)
 {
-    if(checked)
-    {
-        /*  TEST THIS AFTER DEVELOPMENT
-        try
-        {
-            tcpSocket->connectToHost(QHostAddress(beagleBoneIP), beagleBonePort);
+   if(checked)
+   {
+       tcpSocket->connectToHost(QHostAddress(beagleBoneIP), beagleBonePort);
+       if(tcpSocket->waitForConnected(5000))
+       {
+           connect(this->tcpSocket, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+           this->connectionState = true;
+           this->stateNow = CONNECTED_STANDBY;
+           ui->stateConnected->setText("SIM");
+           changeWindowState(CONNECTED_STANDBY);
+       }
+       else
+       {
+           ui->warningLog->append("Conexão indisponível");
+           ui->btConnect->setChecked(false);
+           return;
+       }
 
-        }
-        catch (...)
-        {
-            ui->btConnect->setChecked(false);
-            return;
-        }
-        connect(this->tcpSocket, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
-        */
-        this->connectionState = true;
-        this->stateNow = CONNECTED_STANDBY;
-        ui->stateConnected->setText("SIM");
-        changeWindowState(CONNECTED_STANDBY);
-    }
-    else
-    {
-        if(this->stateNow == CONNECTED_STANDBY)
-        {
-            /*
-            tcpSocket->disconnectFromHost();
-            */
-            this->connectionState = false;
-            changeWindowState(STANDBY);
-        }
-        else
-        {
-            ui->btConnect->setChecked(true);
-        }
-    }
+   }
+   else
+   {
+       if(this->stateNow == CONNECTED_STANDBY)
+       {
+           tcpSocket->disconnectFromHost();
+           this->connectionState = false;
+           changeWindowState(STANDBY);
+       }
+       else
+       {
+           ui->btConnect->setChecked(true);
+       }
+   }
 }
+
 
 void MainWindow::on_btLiga_clicked(bool checked)
 {
