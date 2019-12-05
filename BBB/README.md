@@ -8,7 +8,7 @@ Processo da implementação:
 5. Salvar programa: Calm down, folks;
 6. Sequência de execução do Main: Too easy, ask me another one;
 7. ModBus: Testado separado;
-8. Função executa_estado: Nope
+8. Função executa_estado: Doing
 9. Arquivos hall: Nope
 10. Integração do fluxo com hall: Nope
 
