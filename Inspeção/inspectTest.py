@@ -1,6 +1,8 @@
 # coding=utf-8
 import cv2 as cv
 import numpy as np
+import modbus
+import time
 
 
 # Author: Lucas Costa Ferreira
@@ -56,15 +58,17 @@ def getWireLengthFromImage(debugMode, cameraFrame, cmInPixels):
 def initializeCapture(camera):
     cv.namedWindow("Wire Inspection")
     isValidFrame, preCameraFrame = camera.read()
-    rows, cols = preCameraFrame.shape[:2]
-    M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
-    cameraFrame = cv.warpAffine(preCameraFrame, M, (cols, rows))
-    if not isValidFrame:
-        print("Frame failure")
-        return -1
-    frameHeight, frameWidth = cameraFrame.shape[:2]
-    return frameWidth, frameHeight
-
+    try:
+        rows, cols = preCameraFrame.shape[:2]
+        M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
+        cameraFrame = cv.warpAffine(preCameraFrame, M, (cols, rows))
+        if not isValidFrame:
+            print("Frame failure")
+            return -1
+        frameHeight, frameWidth = cameraFrame.shape[:2]
+        return frameWidth, frameHeight
+    except Exception as e:
+        print ("Erro: " + str(e))
 
 def inspectionMode(debugMode, camera, cmInPixels):
     cv.namedWindow('Wire Inspection')
@@ -108,7 +112,25 @@ def main():
     # Program Sequence
     frameWidth, frameHeight = initializeCapture(camera)
     wireLengthMm = inspectionMode(debugMode, camera, 115)
+    print wireLengthMm
+    '''
+    mb = modbus.Modbus() #Para o teste a classe é instanciada aqui,mas no final será chamada passada como parâmetro pelo main
+    while mb.writeInspectionParams([DBCP,wireLengthMm,dbcpTol])!=3:
+        time.sleep(0.5)
+    while not mb.writeActivateInspect():
+        time.sleep(0.5)
+
+    inspec_ok = False
+    mb.writeActivateInspect()
+    while not inspec_ok:
+        wireLengthMm = inspectionMode(debugMode, camera, 115)
+        mb.writeUpdateWireLenght(wireLengthMm) #Tratar caso de envio mal sucedido?
+        mb.readCell_control() #Caso a leitura seja mal sucedida, a variável continuará em False
+        inspec_ok = mb.INSPECAO_OK
+    '''
+
     endProgram(camera)
 
 
 main()
+
