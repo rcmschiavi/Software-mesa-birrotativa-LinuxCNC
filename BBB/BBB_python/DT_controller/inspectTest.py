@@ -23,23 +23,14 @@ def returnLargestContour(contours):
     return selectContour
 
 
-def getWireLengthFromImage(debugMode, cameraFrame, cmInPixels):
+def getWireLengthFromImage(cameraFrame, cmInPixels):
     try:
         imageROI = cameraFrame[60:420, 160:480]
         grayImage = cv.cvtColor(imageROI, cv.COLOR_BGR2GRAY)
-        if debugMode:
-            cv.namedWindow('gray')
-            cv.imshow('gray', grayImage)
         kernel = np.ones((5, 5), np.float32) / 25
         filteredImage = cv.filter2D(grayImage, -1, kernel)
         blurredImage = cv.blur(filteredImage, (5, 5))
-        if debugMode:
-            cv.namedWindow('filter')
-            cv.imshow('filter', blurredImage)
         threshImage = cv.adaptiveThreshold(blurredImage, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2)
-        if debugMode:
-            cv.namedWindow('thresh')
-            cv.imshow('thresh', threshImage)
         contours, hierarchy = cv.findContours(threshImage, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         wire = returnLargestContour(contours)
         (x, y), (w, h), angle = cv.minAreaRect(wire)
@@ -53,7 +44,7 @@ def getWireLengthFromImage(debugMode, cameraFrame, cmInPixels):
         return 0, None
 
 def initializeCapture(camera):
-    cv.namedWindow("Wire Inspection")
+
     isValidFrame, preCameraFrame = camera.read()
     rows, cols = preCameraFrame.shape[:2]
     M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
@@ -64,8 +55,7 @@ def initializeCapture(camera):
     frameHeight, frameWidth = cameraFrame.shape[:2]
     return frameWidth, frameHeight
 
-def inspectionMode(debugMode, camera, cmInPixels):
-    cv.namedWindow('Wire Inspection')
+def inspectionMode( camera, cmInPixels):
 
     isValidFrame, preCameraFrame = camera.read()
     rows, cols = preCameraFrame.shape[:2]
@@ -74,16 +64,14 @@ def inspectionMode(debugMode, camera, cmInPixels):
     if not isValidFrame:
         print("Frame failure")
         return -1
-    wireLengthMm, wire = getWireLengthFromImage(debugMode, cameraFrame, cmInPixels)
+    wireLengthMm, wire = getWireLengthFromImage(cameraFrame, cmInPixels)
     try:
         box = np.int0(cv.boxPoints(cv.minAreaRect(wire)))
         processedImage = cameraFrame[60:420, 160:480]
         cv.drawContours(processedImage, [box], 0, (0, 0, 255), 2)
-        cv.imshow('Wire Inspection', processedImage)
         print(wireLengthMm)
     except:
         print("Contorno Inválido")
-        cv.imshow('Wire Inspection', cameraFrame)
         wireLengthMm = 0
     cv.waitKey(1)
     return wireLengthMm
@@ -91,7 +79,7 @@ def inspectionMode(debugMode, camera, cmInPixels):
 
 def endProgram(camera):
     camera.release()
-    cv.destroyAllWindows()
+
 
 def operate_wire(MB, camera, DBCP, dbcpTol):
     MB.writeActivateInspect()
@@ -101,7 +89,7 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
     MB.writeFwdWire()
     while True:
 
-        wireLengthMm = inspectionMode(False, camera, 115)
+        wireLengthMm = inspectionMode(camera, 115)
         error = DBCP - wireLengthMm
         if (abs(error)<dbcpTol) and not avanco:
             #Envia inspec_ok para o supervisório
@@ -140,3 +128,4 @@ def main():
     print(cmInPixels)
     endProgram(camera)
 
+main()
