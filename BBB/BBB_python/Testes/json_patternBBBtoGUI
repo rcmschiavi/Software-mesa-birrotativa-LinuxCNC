@@ -1,0 +1,23 @@
+﻿[{
+    //Parada de emergencia externa (1-Parada Emergencia, 0-Sistema OK)
+    "mode": "EXTESTOP", 
+    "params": 0
+  },
+  {
+    //Array de booleanas, homed,homing,turnedon,activePrg,execPrg,taskExec,inspect
+    "mode": "STATUS",
+    "params": [0,0,0,0,0,0,0]
+  },
+  {
+    //Recebe programa carregado na BBB
+    "mode": "PROGRAM",
+    "params": [[0.0,10.0,2.0,1,0],[10.0,20.0,5.0,1,0],...,[10.0,10.0,2.0,1,0]]
+  },
+  {
+    //Array de inspeção, inspectionRESULT, 0-operando,1-ok, -1 erro
+    "mode": "INSPECTION",
+    "params": 1
+  }
+]
+
+

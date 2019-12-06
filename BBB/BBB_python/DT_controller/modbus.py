@@ -14,6 +14,18 @@ class Modbus:
 
     def __init__(self):
         self.c = None
+
+        self.ADDR_BBB_ESTOP = 0
+        self.ADDR_P_ESTOP = 1
+        self.ADDR_UPDATE = 2
+        self.ADDR_MODO_INSPEC = 3
+        self.ADDR_ERRO_INSPECAO = 4
+        self.ADDR_INSPECAO_OK = 5
+        self.ADDR_MESA_START_OP = 6
+        self.ADDR_MESA_END_OP = 7
+        self.ADDR_FEED_FWRD = 14
+        self.ADDR_FEED_BCKW = 15
+
         self.MESA_END_OP = None
         self.MESA_START_OP = None
         self.INSPECAO_OK = None
@@ -23,6 +35,7 @@ class Modbus:
         self.PAINEL_ESTOP = None
         self.BBB_ESTOP = None
         self.CELL_CTRL_ADDR = 3
+
         self.host = "192.168.0.99"
         self.port = "502"
         self.connectModbus()
@@ -53,6 +66,7 @@ class Modbus:
                 bList[0].insert(0,False)
         print len(bList[0])
         return bList[0]
+
     def readInspecParams(self):
         data = []
         data.append(self.c.read_holding_registers(0))
@@ -66,53 +80,57 @@ class Modbus:
         print data
         CELL_CONTROL = self.decimalToLst(data[0])
 
-        self.MESA_END_OP = CELL_CONTROL[7]
-        self.MESA_START_OP = CELL_CONTROL[6]
-        self.INSPECAO_OK = CELL_CONTROL[5]
-        self.ERRO_INSPECAO = CELL_CONTROL[4]
-        self.MODO_INSPECAO = CELL_CONTROL[3]
-        self.DATA_UPDATE = CELL_CONTROL[2]
-        self.PAINEL_ESTOP = CELL_CONTROL[1]
-        self.BBB_ESTOP = CELL_CONTROL[0]
+        self.MESA_END_OP = CELL_CONTROL[self.ADDR_MESA_END_OP]
+        self.MESA_START_OP = CELL_CONTROL[self.ADDR_MESA_START_OP]
+        self.INSPECAO_OK = CELL_CONTROL[self.ADDR_INSPECAO_OK]
+        self.ERRO_INSPECAO = CELL_CONTROL[self.ADDR_ERRO_INSPECAO]
+        self.MODO_INSPECAO = CELL_CONTROL[self.ADDR_MODO_INSPEC]
+        self.DATA_UPDATE = CELL_CONTROL[self.ADDR_UPDATE]
+        self.PAINEL_ESTOP = CELL_CONTROL[self.ADDR_P_ESTOP]
+        self.BBB_ESTOP = CELL_CONTROL[self.ADDR_BBB_ESTOP]
 
         return CELL_CONTROL
 
-    def writeInspectionParams(self, data):
-        ''' Escreve o valor nos registradores de parâmetros de inspeção. Todas as variáveis já vem tratadas'''
-        SETPOINT_ARAME = data[0]
-        ARAME_ATUAL = data[1]
-        TOL_ARAME = data[2]
-        REGs_INSP = [SETPOINT_ARAME,ARAME_ATUAL,TOL_ARAME]
-        i_writen = 0
-        for REG,REG_VALUE in enumerate(REGs_INSP):
-            if self.c.write_multiple_registers(REG, [REG_VALUE]):
-                print("write ok on register: " + str(REG))
-                i_writen+=1
-            else:
-                print("Error writing on register: " + str(REG))
-        if i_writen==3:
-            return True
-        else:
-            return False
-
-    def writeUpdateWireLenght(self,wireLenght):
-        op_succeed = self.c.write_multiple_registers(1, [wireLenght])
-        return op_succeed
-
-
-    def writeActivateInspect(self):
-        activ_insp_address = 3
-
-        CELL_CONTROL = self.readCell_control()
-        CELL_CONTROL[activ_insp_address] = True
-        value = self.boolLstToDecimal(CELL_CONTROL)
-        print value
-        op_succeed = self.c.write_multiple_registers(3, [value])
-        return op_succeed
-
-    def readBBBWainting(self):
-        CELL_CONTROL = self.readCell_control()
-        return CELL_CONTROL[15]
+# #Partes inúteis, considerando as rungs do endereço modbus e a saida do avanço de arame ser um fio
+#
+#     def writeInspectionParams(self, data):
+#         ''' #Escreve o valor nos registradores de parâmetros de inspeção. Todas as variáveis já vem tratadas'''
+#         SETPOINT_ARAME = data[0]
+#         ARAME_ATUAL = data[1]
+#         TOL_ARAME = data[2]
+#         REGs_INSP = [SETPOINT_ARAME,ARAME_ATUAL,TOL_ARAME]
+#         i_writen = 0
+#         for REG,REG_VALUE in enumerate(REGs_INSP):
+#             if self.c.write_multiple_registers(REG, [REG_VALUE]):
+#                 print("write ok on register: " + str(REG))
+#                 i_writen+=1
+#             else:
+#                 print("Error writing on register: " + str(REG))
+#         if i_writen==3:
+#             return True
+#         else:
+#             return False
+#
+#     def writeUpdateWireLenght(self,wireLenght):
+#         op_succeed = self.c.write_multiple_registers(1, [wireLenght])
+#         return op_succeed
+#
+#     def writeActivateInspect(self):
+#         CELL_CONTROL = self.readCell_control()
+#         CELL_CONTROL[self.ADDR_MODO_INSPEC] = True
+#         value = self.boolLstToDecimal(CELL_CONTROL)
+#         print value
+#         op_succeed = self.c.write_multiple_registers(3, [value])
+#         return op_succeed
+#
+#     def writeDeactivateInspect(self):
+#
+#         CELL_CONTROL = self.readCell_control()
+#         CELL_CONTROL[self.ADDR_MODO_INSPEC] = False
+#         value = self.boolLstToDecimal(CELL_CONTROL)
+#         print value
+#         op_succeed = self.c.write_multiple_registers(3, [value])
+#         return op_succeed
 
     def writeFwdWire(self):
         CELL_CONTROL = self.readCell_control()
@@ -128,33 +146,38 @@ class Modbus:
         result = self.c.write_multiple_registers(3, [value])
         return result
 
-    def writeDeactivateInspect(self):
-        activ_insp_address = 3
+    def writeStopWire(self):
 
         CELL_CONTROL = self.readCell_control()
-        CELL_CONTROL[activ_insp_address] = False
+        CELL_CONTROL[13] = False
+        CELL_CONTROL[14] = False
         value = self.boolLstToDecimal(CELL_CONTROL)
-        print value
-        op_succeed = self.c.write_multiple_registers(3, [value])
-        return op_succeed
+        return value
 
-    def writeESTOP(self, ):
-        ESTOP_address = 7
+    def writeESTOP(self):
+
         CELL_CONTROL = self.readCell_control()
-        CELL_CONTROL[ESTOP_address] = True
+        CELL_CONTROL[self.ADDR_BBB_ESTOP] = True
         op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, CELL_CONTROL)
         return op_succeed
 
+    def getP_ESTOP(self):
+        self.readCell_control()
+        return self.PAINEL_ESTOP
+
+    def getMESA_START_OP(self):
+
+        self.readCell_control()
+        return self.MESA_START_OP
+
     def connectModbus(self):
+
         self.c = ModbusClient()
         self.c.host(self.host)
         self.c.port(self.port)
         self.c.open()
         print "Conexão aberta"
 
+
     def closeConection(self):
         self.c.close()
-
-
-mb = Modbus()
-print mb.readCell_control()

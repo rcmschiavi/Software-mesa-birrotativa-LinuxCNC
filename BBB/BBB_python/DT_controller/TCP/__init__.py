@@ -1,23 +1,22 @@
 #coding: utf-8
 '''
-Classe que lida com a conexão TCP através de uma thread
+Package que lida com a conexão TCP através de uma thread
 
 Autor: Rodolfo Cavour Moretti Schiavi
 
-Ainda não foi implementada a queue que fará a comunicação entre a thread principal e a de TCP
-
 '''
+
 from threading import Thread
 import socket
-import time, json, os, sys, pickle
-from collections import OrderedDict
+import time, json, os
 import save_status
 
 class Connection:
 
-    def __init__(self, q):
+    def __init__(self, qRec, qSend):
         self.cur_path = os.path.dirname(__file__)
-        self.q = q
+        self.qRec = qRec
+        self.qRec = qSend
         self.callback_latency = 2
         self.connection = None
         self.i = 0
@@ -31,21 +30,21 @@ class Connection:
 
 
     def start_socket(self):
-        i=0
         # A conexão é iniciada e reiniciada sempre que se fecha por algum motivo
-        while i<1:
+        while True:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_address = ('10.0.0.2', 8000)
             self.sock.bind(self.server_address)
             self.sock.listen(1)
             self.wait_connection()
-            time.sleep(4)
-            self.wait_message()
-            #self.teste_call()
             time.sleep(1)
+            self.wait_message()
+            time.sleep(0.1)
             self.connection.close()
-            time.sleep(4)
-            i+=1
+            time.sleep(0.1)
+            key = input("Digite 'x' para sair")
+            if key=='x':
+                break
         print "Fim da conexão"
 
 
@@ -64,7 +63,7 @@ class Connection:
                     if self.data:
                         print self.data
                         self.i += 1
-                        self.q.put(self.data)
+                        self.qRec.put(self.data)
                         self.callback("200")
 
                     else:
@@ -104,22 +103,26 @@ class Connection:
         data = json.dumps(data)
         self.connection.sendall(data)
         self.connection.sendall(data[0])
+
     def emergency(self):
         self.connection.sendall()
 
 
 class Th(Thread):
 
-    def __init__(self,q):
+    def __init__(self, qRec, qSend):
         Thread.__init__(self)
         self.con = None
-        self.q = q
+        self.qRec = qRec
+        self.qRec = qSend
 
     def run(self):
+
         self.connect()
 
     def connect(self):
-        self.con = Connection(self.q)
+        self.con = Connection(self.qRec, self.qSend)
+
 
 
 
