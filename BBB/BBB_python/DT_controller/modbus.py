@@ -23,8 +23,9 @@ class Modbus:
         self.ADDR_INSPECAO_OK = 5
         self.ADDR_MESA_START_OP = 6
         self.ADDR_MESA_END_OP = 7
+        self.ADDR_FEED_BCKW = 13
         self.ADDR_FEED_FWRD = 14
-        self.ADDR_FEED_BCKW = 15
+        self.ADDR_BBB_WAITING = 15
 
         self.MESA_END_OP = None
         self.MESA_START_OP = None
@@ -136,13 +137,28 @@ class Modbus:
         op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         return op_succeed
 
+    def writeDeactivateInspect(self):
+        CELL_CONTROL = self.readCell_control()
+        CELL_CONTROL[self.ADDR_MODO_INSPEC] = False
+        value = self.boolLstToDecimal(CELL_CONTROL)
+        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
+        return op_succeed
+
+    def readBBBWaiting(self):
+        CELL_CONTROL = self.readCell_control()
+        return CELL_CONTROL[self.ADDR_BBB_WAITING]
+
 
     def writeFwdWire(self):
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[14] = True
         value = self.boolLstToDecimal(CELL_CONTROL)
         result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
-        time.sleep(0.5)
+        BBB_WAIT = self.readBBBWaiting()
+        print "BBB wait"
+        while BBB_WAIT:
+            BBB_WAIT = self.readBBBWaiting()
+        print "BBB ok"
         result2 = self.writeStopWire()
         return [result1,result2]
 
@@ -151,7 +167,11 @@ class Modbus:
         CELL_CONTROL[13] = True
         value = self.boolLstToDecimal(CELL_CONTROL)
         result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
-        time.sleep(0.5)
+        BBB_WAIT = self.readBBBWaiting()
+        print "BBB wait"
+        while BBB_WAIT:
+            BBB_WAIT = self.readBBBWaiting()
+        print "BBB ok"
         result2 = self.writeStopWire()
         return [result1,result2]
 
@@ -197,21 +217,4 @@ class Modbus:
 
     def closeConection(self):
         self.c.close()
-
-MB = Modbus()
-print MB.readCell_control()
-print MB.readInspecParams()
-print MB.setTimer(200)
-print MB.readInspecParams()
-time.sleep(1)
-print MB.writeActivateInspect()
-time.sleep(1)
-print MB.writeFwdWire()
-
-#print MB.writeBackWire()
-time.sleep(5)
-#print MB.readInspecParams()
-print MB.readCell_control()
-
-time.sleep(1)
 
