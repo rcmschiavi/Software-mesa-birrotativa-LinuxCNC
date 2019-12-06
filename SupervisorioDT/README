@@ -1,6 +1,7 @@
 Repositório para versionamento da GUI.
 
 Progresso da Implementação:
+
 - Editor de Programas;
 - Máquina de Estados;
 - Conexão TCP;
@@ -9,10 +10,12 @@ Progresso da Implementação:
 - Padronização e organização do .h e .cpp;
 - Adicionar parâmetro de velocidade para a UI;
 - Botão para apagar programa ativo na BBB;
-- Intertravamento entre GUI e BBB (20%); - Prioridade Alta
-- Testes de Conexão e Comunicação entre BBB e GUI (0%) - Prioridade Alta
+- Testes de Conexão e Comunicação entre BBB e GUI;
+- Parada de emergência externa adicionada;
+- Implementar botões de recebimento e deleção de programa;
+- Intertravamento entre GUI e BBB;
 - Sistema de envio de Imagens e Streaming (0%) - Prioridade Alta
 - Arquivos de configuração padrão (50%); - Baixa Prioridade
-- Suporte e ajuda ao usuário (0%); - Baixa Prioridade
+- Suporte e ajuda ao usuário (69%); - Baixa Prioridade
 
 
