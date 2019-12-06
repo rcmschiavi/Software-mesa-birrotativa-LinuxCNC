@@ -10,10 +10,14 @@ class Machine_control:
     def init_pins(self):
         self.h.newpin("set_position_b", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_position_c", hal.HAL_FLOAT, hal.HAL_OUT)
+        '''
+        Não é possível alterar o parametro, devemos definir uma velocidade máxima e enviar a posição de modo 
+        a gerar a velocidade
         self.h.newpin("set_speed_b", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_speed_c", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_accel_b", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_accel_c", hal.HAL_FLOAT, hal.HAL_OUT)
+        '''
         self.h.newpin("dir_b", hal.HAL_BIT, hal.HAL_OUT)
         self.h.newpin("dir_c", hal.HAL_BIT, hal.HAL_OUT)
         self.h.newpin("enable_b", hal.HAL_BIT, hal.HAL_OUT)
@@ -22,6 +26,8 @@ class Machine_control:
         self.h.newpin("sensor_c", hal.HAL_BIT, hal.HAL_IN)
         self.h.newpin("get_position_b", hal.HAL_FLOAT, hal.HAL_IN)
         self.h.newpin("get_position_c", hal.HAL_FLOAT, hal.HAL_IN)
+
+
 
 
     def setSpeed(self, speed):

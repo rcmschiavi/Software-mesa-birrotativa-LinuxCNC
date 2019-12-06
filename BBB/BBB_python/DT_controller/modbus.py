@@ -34,7 +34,8 @@ class Modbus:
         self.DATA_UPDATE = None
         self.PAINEL_ESTOP = None
         self.BBB_ESTOP = None
-        self.CELL_CTRL_ADDR = 3
+
+        self.CELL_CTRL_ADDR = 2
 
         self.host = "192.168.0.99"
         self.port = "502"
@@ -59,12 +60,9 @@ class Modbus:
         bList = []
         bList.append([True if x=='1' else False for x in binary])
         size_ctrl = len(bList[0])
-        print bList[0]
-        print(size_ctrl)
         if size_ctrl < data_size:
             for i in range(data_size - size_ctrl):
                 bList[0].insert(0,False)
-        print len(bList[0])
         return bList[0]
 
     def readInspecParams(self):
@@ -77,7 +75,6 @@ class Modbus:
     def readCell_control(self):
 
         data = self.c.read_holding_registers(self.CELL_CTRL_ADDR)
-        print data
         CELL_CONTROL = self.decimalToLst(data[0])
 
         self.MESA_END_OP = CELL_CONTROL[self.ADDR_MESA_END_OP]
@@ -132,18 +129,34 @@ class Modbus:
 #         op_succeed = self.c.write_multiple_registers(3, [value])
 #         return op_succeed
 
+    def writeActivateInspect(self):
+        CELL_CONTROL = self.readCell_control()
+        CELL_CONTROL[self.ADDR_MODO_INSPEC] = True
+        value = self.boolLstToDecimal(CELL_CONTROL)
+        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
+        return op_succeed
+
+
     def writeFwdWire(self):
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[14] = True
         value = self.boolLstToDecimal(CELL_CONTROL)
-        result = self.c.write_multiple_registers(3, [value])
-        return result
+        result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
+        time.sleep(0.5)
+        result2 = self.writeStopWire()
+        return [result1,result2]
 
     def writeBackWire(self):
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[13] = True
         value = self.boolLstToDecimal(CELL_CONTROL)
-        result = self.c.write_multiple_registers(3, [value])
+        result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
+        time.sleep(0.5)
+        result2 = self.writeStopWire()
+        return [result1,result2]
+
+    def setTimer(self,time):
+        result = self.c.write_multiple_registers(1, [time])
         return result
 
     def writeStopWire(self):
@@ -152,7 +165,8 @@ class Modbus:
         CELL_CONTROL[13] = False
         CELL_CONTROL[14] = False
         value = self.boolLstToDecimal(CELL_CONTROL)
-        return value
+        result = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
+        return result
 
     def writeESTOP(self):
 
@@ -170,6 +184,8 @@ class Modbus:
         self.readCell_control()
         return self.MESA_START_OP
 
+
+
     def connectModbus(self):
 
         self.c = ModbusClient()
@@ -181,3 +197,21 @@ class Modbus:
 
     def closeConection(self):
         self.c.close()
+
+MB = Modbus()
+print MB.readCell_control()
+print MB.readInspecParams()
+print MB.setTimer(200)
+print MB.readInspecParams()
+time.sleep(1)
+print MB.writeActivateInspect()
+time.sleep(1)
+print MB.writeFwdWire()
+
+#print MB.writeBackWire()
+time.sleep(5)
+#print MB.readInspecParams()
+print MB.readCell_control()
+
+time.sleep(1)
+
