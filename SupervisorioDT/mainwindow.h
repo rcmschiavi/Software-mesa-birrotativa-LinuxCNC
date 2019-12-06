@@ -68,7 +68,7 @@ private slots:
 
     //Wrappers Json para TCP/IP
     void sendJsonThroughSocket(QJsonObject obj);
-    QJsonObject recieveJsonThroughSocket();
+    QJsonDocument recieveJsonThroughSocket();
 
     //Funções de arquivo
     void saveJsonToFile(QJsonDocument doc);
@@ -113,6 +113,12 @@ private slots:
     void on_homeMck_clicked();
     void on_activePrgMck_clicked();
 
+    void on_btReceber_clicked();
+
+    void on_btDeletar_clicked();
+
+    void on_btExtEstop_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -136,7 +142,6 @@ private:
     int beagleBonePort = 10000;
     QTcpSocket* tcpSocket;
     QByteArray dataBuffer;
-    QJsonObject recieverObject;
 
     //Program Editor Variables
     int editorLinePointer = 0;

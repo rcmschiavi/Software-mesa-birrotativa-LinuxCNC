@@ -130,8 +130,8 @@ void MainWindow::recieveJsonProgramFromBBB(QJsonObject program)
                 B_ang = movement.at(0).toDouble();
                 C_ang = movement.at(1).toDouble();
                 veloc = movement.at(2).toDouble();
-                fim_op = movement.at(3).toBool();
-                inspect = movement.at(4).toBool();
+                fim_op = movement.at(3).toInt();
+                inspect = movement.at(4).toInt();
                 drawWidgetTable(B_ang,C_ang,veloc,fim_op,inspect);
             }
             catch(...)
@@ -186,13 +186,12 @@ void MainWindow::sendJsonThroughSocket(const QJsonObject obj)
         ui->warningLog->append("Falha na conexão");
 }
 
-QJsonObject MainWindow::recieveJsonThroughSocket()
+QJsonDocument MainWindow::recieveJsonThroughSocket()
 {
    QString rawData = QString(tcpSocket->readAll());
    QByteArray encodedData = rawData.toUtf8();
    QJsonDocument doc = QJsonDocument::fromJson(encodedData);
-   QJsonObject obj = doc.object();
-   return obj;
+   return doc;
 }
 
 void MainWindow::on_btConfig_clicked()
@@ -203,51 +202,65 @@ void MainWindow::on_btConfig_clicked()
 //Slot acionado sempre que exite um pacote TCP pronto para leitura.
 void MainWindow::onReadyRead()
 {
-    recieverObject = recieveJsonThroughSocket();
-    if(recieverObject.isEmpty())
+    QJsonDocument recieverDocument = recieveJsonThroughSocket();
+    QJsonObject obj = recieverDocument.object();
+    QString keyValue = obj.value("mode").toString();
+    if(keyValue == "EXTESTOP")
     {
-        ui->warningLog->append("Erro de formato JSON");
-        return;
-    }
-    if(recieverObject.contains("mode"))
-    {
-        QString keyValue = recieverObject.value("mode").toString();
-        if(keyValue == "EXTESTOP")
+        //Adicionar testes de valor, para reiniciar a máquina de estados do supervisório
+        bool tipo = obj.value("params").toInt();
+        if(tipo == true)
         {
-            //Adicionar testes de valor, para reiniciar a máquina de estados do supervisório
+            ui->warningLog->append("A parada de emergência externa foi acionada, favor checar integridade da célula");
             changeWindowState(EXTESTOP);
         }
-        if(keyValue == "STATUS")
+        else
         {
-            QJsonArray statusArray = recieverObject.value("params").toArray();
-            homed = statusArray.at(0).toBool();
-            homing = statusArray.at(1).toBool();
-            turnedOn = statusArray.at(2).toBool();
-            programActive = statusArray.at(3).toBool();
-            programExec = statusArray.at(4).toBool();
-            taskExec = statusArray.at(5).toBool();
-            inspection = statusArray.at(6).toBool();
+            changeWindowState(CONNECTED_STANDBY);
+            homed = false;
+            homing = false;
+            turnedOn = false;
+            programActive = false;
+            programExec = false;
+            taskExec = false;
+            inspection = false;
             changeWindowStatus();
         }
-        if(keyValue == "INSPECTION")
+    }
+    else if(keyValue == "STATUS")
+    {
+        QJsonArray arr = obj.value("params").toArray();
+        homed = arr.at(0).toInt();
+        homing = arr.at(1).toInt();
+        turnedOn = arr.at(2).toInt();
+        programActive = arr.at(3).toInt();
+        programExec = arr.at(4).toInt();
+        taskExec = arr.at(5).toInt();
+        inspection = arr.at(6).toInt();
+        changeWindowStatus();
+    }
+    else if(keyValue == "INSPECTION")
+    {
+        int param = obj.value("params").toInt();
+        if(param == 1)
         {
-            int param = recieverObject.value("params").toInt();
-            if(param == 1)
-            {
-                ui->warningLog->append("Calibração terminada");
-            }
-            if(param == -1)
-            {
-                ui->warningLog->append("Erro de calibração");
-            }
+            ui->warningLog->append("Calibração terminada");
         }
-        if(keyValue == "PROGRAM")
+        if(param == -1)
         {
-            ui->warningLog->append("Programa Receido");
-            recieveJsonProgramFromBBB(recieverObject);
+            ui->warningLog->append("Erro de calibração");
         }
     }
-    //Aqui serão inseridos os parsers para absorver os dados JSON recebidos pela GUI.
+    else if(keyValue == "PROGRAM")
+    {
+        if(this->stateNow == PROG)
+        {
+            ui->warningLog->append("Programa Receido");
+            recieveJsonProgramFromBBB(obj);
+        }
+        else
+            ui->warningLog->append("O programa foi recebido, mas a interface deve estar em modo programa. Tente Novamente.");
+    }
 }
 
 //=============================================STATE MACHINE===============================
@@ -348,6 +361,7 @@ void MainWindow::changeWindowState(int state)
         ui->groupInspect->setEnabled(true);
         ui->groupStatus->setEnabled(true);
         ui->groupEditor->setEnabled(false);
+        ui->groupProgCtrl->setEnabled(false);
         ui->cameraImage->setEnabled(true);
         ui->btExtEstop->setEnabled(true);
         this->stateNow = CONNECTED_STANDBY;
@@ -636,6 +650,7 @@ void MainWindow::on_btCycStart_clicked()
         sendJsonThroughSocket(senderObject);
     }
     else
+    {
         if(!this->programActive)
             ui->warningLog->append("Não há programa ativo");
         if(this->programExec)
@@ -644,6 +659,7 @@ void MainWindow::on_btCycStart_clicked()
             ui->warningLog->append("Aguarde a execução da tarefa");
         if(!this->homed)
             ui->warningLog->append("Favor fazer a rotina de Home.");
+    }
 }
 
 
@@ -699,6 +715,49 @@ void MainWindow::on_cbInspecaoJog_toggled(bool checked)
 {
     if(checked)
         ui->cbFimOpJog->setChecked(false);
+}
+
+//=============================================PROGRAM CONTROL==============================
+
+void MainWindow::on_btCarregar_clicked()
+{
+    if(this->stateNow == PROG)
+    {
+        //O programa não é nulo
+        if(ui->programEditor->rowCount() >= 1)
+        {
+            QJsonObject senderObject = loadWidgetTable();
+            sendJsonThroughSocket(senderObject);
+        }
+        else
+            ui->warningLog->append("O programa está vazio.");
+    }
+}
+
+void MainWindow::on_btReceber_clicked()
+{
+    if(this->stateNow == PROG && this->programActive)
+    {
+        QJsonObject senderObject{
+            {"mode","PROGRAM"},
+            {"operation", 1},
+            {"params",0}
+        };
+        sendJsonThroughSocket(senderObject);
+    }
+}
+
+void MainWindow::on_btDeletar_clicked()
+{
+    if(this->stateNow == PROG && this->programActive)
+    {
+        QJsonObject senderObject{
+            {"mode","PROGRAM"},
+            {"operation", -1},
+            {"params",0}
+        };
+        sendJsonThroughSocket(senderObject);
+    }
 }
 
 //=============================================PROGRAM EDITOR===============================
@@ -870,20 +929,6 @@ QJsonObject MainWindow::loadWidgetTable()
     return senderObject;
 }
 
-void MainWindow::on_btCarregar_clicked()
-{
-    if(this->stateNow == PROG)
-    {
-        //O programa não é nulo
-        if(ui->programEditor->rowCount() >= 1)
-        {
-            QJsonObject senderObject = loadWidgetTable();
-            sendJsonThroughSocket(senderObject);
-        }
-        else
-            ui->warningLog->append("O programa está vazio.");
-    }
-}
 
 //Mocks (debug)
 
