@@ -11,6 +11,7 @@ Processo da implementação:
 8. Função executa_estado: Doing
 9. Arquivos hall: Nope
 10. Integração do fluxo com hall: Nope
+11. Enviar "params" invertido quando for enviar o programa invertido pq o array de array é zuado na leitura.
 
 ### Fluxograma
 
