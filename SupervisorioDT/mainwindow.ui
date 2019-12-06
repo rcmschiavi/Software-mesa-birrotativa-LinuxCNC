@@ -347,6 +347,10 @@
       <property name="text">
        <string>Rec</string>
       </property>
+      <property name="icon">
+       <iconset resource="gerenciadorRecursos.qrc">
+        <normaloff>:/recursos/interfaceIcons/resources/script_add.ico</normaloff>:/recursos/interfaceIcons/resources/script_add.ico</iconset>
+      </property>
       <property name="iconSize">
        <size>
         <width>32</width>
@@ -371,6 +375,10 @@
       </property>
       <property name="text">
        <string>Del</string>
+      </property>
+      <property name="icon">
+       <iconset resource="gerenciadorRecursos.qrc">
+        <normaloff>:/recursos/interfaceIcons/resources/script_delete.ico</normaloff>:/recursos/interfaceIcons/resources/script_delete.ico</iconset>
       </property>
       <property name="iconSize">
        <size>
@@ -416,7 +424,7 @@
      </property>
      <property name="icon">
       <iconset resource="gerenciadorRecursos.qrc">
-       <normaloff>:/recursos/interfaceIcons/resources/script_add.ico</normaloff>:/recursos/interfaceIcons/resources/script_add.ico</iconset>
+       <normaloff>:/recursos/interfaceIcons/resources/script_code.ico</normaloff>:/recursos/interfaceIcons/resources/script_code.ico</iconset>
      </property>
      <property name="iconSize">
       <size>

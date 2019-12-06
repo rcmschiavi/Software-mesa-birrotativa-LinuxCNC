@@ -255,7 +255,7 @@ void MainWindow::onReadyRead()
     {
         if(this->stateNow == PROG)
         {
-            ui->warningLog->append("Programa Receido");
+            ui->warningLog->append("Programa Recebido");
             recieveJsonProgramFromBBB(obj);
         }
         else
@@ -449,6 +449,7 @@ void MainWindow::on_btConnect_clicked(bool checked)
 {
    if(checked)
    {
+       /*
        tcpSocket->connectToHost(QHostAddress(beagleBoneIP), beagleBonePort);
        if(tcpSocket->waitForConnected(5000))
        {
@@ -463,7 +464,11 @@ void MainWindow::on_btConnect_clicked(bool checked)
            ui->warningLog->append("Conexão indisponível");
            ui->btConnect->setChecked(false);
            return;
-       }
+       }*/
+       this->connectionState = true;
+       this->stateNow = CONNECTED_STANDBY;
+       ui->stateConnected->setText("SIM");
+       changeWindowState(CONNECTED_STANDBY);
 
    }
    else
@@ -481,6 +486,10 @@ void MainWindow::on_btConnect_clicked(bool checked)
    }
 }
 
+void MainWindow::on_btExtEstop_clicked()
+{
+    changeWindowState(EXTESTOP);
+}
 
 void MainWindow::on_btLiga_clicked(bool checked)
 {
@@ -738,6 +747,7 @@ void MainWindow::on_btReceber_clicked()
 {
     if(this->stateNow == PROG && this->programActive)
     {
+        ui->warningLog->append("Requisitando Dados...");
         QJsonObject senderObject{
             {"mode","PROGRAM"},
             {"operation", 1},
@@ -751,12 +761,17 @@ void MainWindow::on_btDeletar_clicked()
 {
     if(this->stateNow == PROG && this->programActive)
     {
+        ui->warningLog->append("Deletando Programa...");
         QJsonObject senderObject{
             {"mode","PROGRAM"},
             {"operation", -1},
             {"params",0}
         };
         sendJsonThroughSocket(senderObject);
+    }
+    else if(!this->programActive)
+    {
+        ui->warningLog->append("Não há programa ativo.");
     }
 }
 
