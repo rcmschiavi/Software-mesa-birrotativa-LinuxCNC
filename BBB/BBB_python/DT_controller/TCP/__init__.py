@@ -9,14 +9,12 @@ Autor: Rodolfo Cavour Moretti Schiavi
 from threading import Thread
 import socket
 import time, json, os
-import save_status
-
 class Connection:
 
     def __init__(self, qRec, qSend):
         self.cur_path = os.path.dirname(__file__)
         self.qRec = qRec
-        self.qRec = qSend
+        self.qSend = qSend
         self.callback_latency = 2
         self.connection = None
         self.i = 0
@@ -71,41 +69,14 @@ class Connection:
                         break
                 except Exception as e:
                     print ("Erro 1 waitmessage: " + str(e))
-                    self.data=""
-                    self.callback(self.data)
+                    if not self.qSend.empty():
+                        self.data=self.qSend.get()
+                        self.callback(self.data)
         except Exception as e:
             print ("Erro 2 waitmessage: " + str(e))
 
     def callback(self, data):
-        file_address = self.cur_path + '/status_data.json'
-        if data == "":
-            try:
-                if os.stat(file_address).st_size!=0:
-                    t_i = time.time()
-                    with open(file_address, 'r+') as json_file:
-                        data = json.load(json_file)
-                        data = json.dumps(data[0]) #Decodifica para enviar
-                    t_f = time.time()
-                    self.connection.sendall(str(data))
-                else:
-                    print "File is empty"
-            except Exception as e:
-                print ("Erro callback: "+str(e))
-        else:
-            self.connection.sendall(str(data)+"\n")
-    def teste_call(self):
-        file_address = self.cur_path + '/status_data.json'
-        with open(file_address, 'r') as json_file:
-            data = json.load(json_file)
-
-        self.connection.sendall(str(data))
-        self.connection.sendall(data[0])
-        data = json.dumps(data)
-        self.connection.sendall(data)
-        self.connection.sendall(data[0])
-
-    def emergency(self):
-        self.connection.sendall()
+        self.connection.sendall(str(data)+"\n")
 
 
 class Th(Thread):

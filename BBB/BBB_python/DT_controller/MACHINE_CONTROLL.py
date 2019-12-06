@@ -5,14 +5,15 @@ class Machine_control:
     def __init__(self):
         self.h = hal.component("machine_controll")
         self.init_pins()
+        self.roda()
 
     def init_pins(self):
         self.h.newpin("set_position_b", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_position_c", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_speed_b", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("set_speed_c", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_acell_b", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_acell_c", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.h.newpin("set_accel_b", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.h.newpin("set_accel_c", hal.HAL_FLOAT, hal.HAL_OUT)
         self.h.newpin("dir_b", hal.HAL_BIT, hal.HAL_OUT)
         self.h.newpin("dir_c", hal.HAL_BIT, hal.HAL_OUT)
         self.h.newpin("enable_b", hal.HAL_BIT, hal.HAL_OUT)
@@ -38,4 +39,15 @@ class Machine_control:
         elif i==1:
             return self.h["sensor_c"]
         else: return None
+
+    def roda(self):
+        i=0
+        while i<10:
+            self.setSpeed(10+i*3)
+            self.setPosition(5+3*i,7+3*i)
+            time.sleep(5)
+            i+=1
+
+MC = Machine_control()
+
 

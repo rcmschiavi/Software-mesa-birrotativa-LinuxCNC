@@ -10,7 +10,6 @@ Testes como o Queue
 '''
 
 import TCP
-import command_parser
 import Queue, time, json
 import jsonPatternArray
 import modbus, MACHINE_CONTROLL
