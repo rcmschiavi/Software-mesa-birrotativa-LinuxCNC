@@ -43,17 +43,11 @@ class Main:
         self.prg_point = 0
         self.jog_buffer = []
         self.is_moving = False
-        self.axisBasc = {
-            "homeSpeed": 3,
-            "homeSpeedFine": 1,
-            "axisIndex": 1
-        }
-        self.axisRot = {
-            "homeSpeed": 25,
-            "homeSpeedFine": 10,
-            "axisIndex": 0
-        }
         self.homeCommand = False
+        self.bascHomed = False
+        self.rotHomed = False
+        self.bascHomedFine = False
+        self.rotHomedFine = False
         #self.MB = modbus.Modbus()
 
 
@@ -153,10 +147,11 @@ class Main:
     def HOME_CYCLE(self):
         #Home do primeiro eixo
         self.homeCommand = False
-        if self.HOME_AXIS(self.axisBasc):
-            self.HOME_AXIS(self.axisRot):
-            self.JPA.HOMING = 0
-            self.JPA.HOMED = 1
+        if self.HOME_AXIS(self.controller.axisBasc, "normal") and not self.bascHomed:
+            if self.HOME_AXIS(self.controller.axisRot, "normal") and not self.rotHomed:
+
+                self.JPA.HOMING = 0
+                self.JPA.HOMED = 1
 
 
         pass
@@ -170,6 +165,8 @@ class Main:
             else:
                 if(self.controller.readSensor(0) == True):
                     self.controller.stopAxis(axis.get("axisIndex"))
+                    self.bascHomed = True
+                    self.homeCommand = False
                     return True
         elif(mode == "fine"):
 
