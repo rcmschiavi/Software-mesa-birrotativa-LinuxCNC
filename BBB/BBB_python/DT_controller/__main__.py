@@ -118,6 +118,7 @@ class Main:
             self.HOME_CYCLE()
             if self.JPA.HOMED == 1:
                 self.JPA.HOMING = 0
+                #status aqui
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
                 self.state = "STOPPED"
@@ -141,18 +142,21 @@ class Main:
                 #Não há programa válido
                 self.state="STOPPED"
                 self.JPA.EXEC_PGR=0
+                # status aqui
 
         elif self.state == "JOGGING" or mode == "JOG":
             if mode=="JOG":
                 self.jog_buffer.append(params)
                 self.state="JOGGING"
                 self.JPA.TASK_EXEC = 1
+                # status aqui
 
             if len(self.jog_buffer):
                 self.EXEC_MOV()
             else:
                 if not self.doingTask:
                     self.JPA.TASK_EXEC = 0
+                    # status aqui
                     self.state="STOPPED"
 
         if mode == "PROGRAM":
@@ -190,6 +194,7 @@ class Main:
             elif not self.waitForInspect and not self.waitForRobot:
                 self.controller.setMachinePos(self.activeProgram[self.prg_point][0],self.activeProgram[self.prg_point][1],self.activeProgram[self.prg_point][2])
                 self.JPA.TASK_EXEC = 1
+                # status aqui
                 self.doingTask = True
 
         elif self.doingTask:
@@ -198,10 +203,12 @@ class Main:
                 if self.activeProgram[self.prg_point][3] == 1:
                     self.MB.writeMesaEndOP()
                     self.JPA.TASK_EXEC = 0
+                    # status aqui
                     self.waitForRobot = True
                 elif self.activeProgram[self.prg_point][4] == 1:
                     self.MB.writeMesaEndOP()
                     self.JPA.TASK_EXEC = 0
+                    # status aqui
                     self.waitForInspect = True
                 self.prg_point = self.prg_point + 1
                 self.doingTask = False
@@ -240,6 +247,7 @@ class Main:
         elif self.bascHomedFine and self.rotHomedFine:
             self.JPA.HOMING = 0
             self.JPA.HOMED = 1
+            # status aqui
 
     def HOME_AXIS(self, axis, mode):
         if mode == "normal":
