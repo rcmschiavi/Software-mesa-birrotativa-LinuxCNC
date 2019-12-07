@@ -38,11 +38,19 @@ class Main:
         #self.c.start()
         #self.save_stat = TCP.save_status.Save_file()
         #self.params = TCP.save_status.params()
-        self.state = "stoped"
+        self.state = "STOPPED"
         self.cycle()
-        self.prg_point = 0
         self.jog_buffer = []
+        self.activeProgram = []
         self.is_moving = False
+
+        #Program Excecution Variables
+        self.prg_point = 0
+        self.doingTask = False
+        self.waitForRobot = False
+        self.waitForInspect = False
+
+        #Homing Routine Variables
         self.homeInit = False
         self.homeCommand = False
         self.bascHomed = False
@@ -51,7 +59,7 @@ class Main:
         self.rotHomedFine = False
         self.rotHomeBwd = False
         self.bascHomeBwd = False
-        #self.MB = modbus.Modbus()
+        self.MB = modbus.Modbus()
 
 
     def cycle(self):
@@ -82,19 +90,19 @@ class Main:
             return
         elif self.state == "EXTESTOP":
             # Pooling modbus para ler o estado e enviar EXTESTOP ok
-            self.state = "stopped"
+            self.state = "STOPPED"
             data = self.JPA.EXTESTOP(0)
             self.qSend.put(1, data) #Envia o status da que a parada de emergência foi desativada
             return
 
-        elif self.state=="stopped" and mode==None:
+        elif self.state=="STOPPED" and mode==None:
             self.JPA.EXEC_PGR = 0
             self.JPA.TASK_EXEC = 0
             data = self.JPA.STATUS()
             self.qSend.put(2, data)  # Envia o status
 
         elif (self.state=="jogging" or self.state=="exec_prog") and (mode=="ESTOP"):
-            self.state = "stopped"
+            self.state = "STOPPED"
             return
 
         elif mode=="HOME":
@@ -112,46 +120,97 @@ class Main:
                 self.JPA.HOMING = 0
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
-                self.state = "stopped"
+                self.state = "STOPPED"
 
-        elif self.state=="exec_prog" or mode=="exec_prog":
+        elif (self.state=="CYCSTART" or mode=="CYCSTART") and self.JPA.ACTIVE_PGR == 1:
             if mode=="ESTOP":
-                self.state="stopped"
+                self.state="STOPPED"
                 self.JPA.EXEC_PGR = 0
                 self.JPA.TASK_EXEC = 0
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
 
-            elif mode=="cycStart":
-                self.prg_point = 0
+            elif mode=="CYCSTART":
                 self.JPA.EXEC_PGR=1
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
-                # executa_operação()
 
+            if len(self.activeProgram):
+                self.EXEC_PROGRAM()
             else:
-                # executa_operação() # o fim do programa alterará o estado para parado
-                pass
-        elif self.state=="jogging" or mode=="jog":
-            if mode=="jog":
+                #Não há programa válido
+                self.state="STOPPED"
+                self.JPA.EXEC_PGR=0
+
+        elif self.state == "JOGGING" or mode == "JOG":
+            if mode=="JOG":
                 self.jog_buffer.append(params)
-                self.state="jogging"
-            # check_movement()
+                self.state="JOGGING"
+                self.JPA.TASK_EXEC = 1
 
             if len(self.jog_buffer):
-                if not self.is_moving:
-                    #exec_mov() #Exclui o item da lista
-                    pass
+                self.EXEC_MOV()
             else:
-                if not self.is_moving:
-                    self.state="stoped"
+                if not self.doingTask:
+                    self.JPA.TASK_EXEC = 0
+                    self.state="STOPPED"
 
-        if mode=="program":
+        if mode == "PROGRAM":
             #O modo gravar programa independe dos outros modos e estados
             pass
-        #proximo estado é o prog
 
         time.sleep(5)
+
+    def EXEC_MOV(self):
+        if not self.controller.isMoving() and not self.doingTask:
+            self.controller.setMachinePos(self.jog_buffer[0][0],self.jog_buffer[0][1],self.jog_buffer[0][2])
+            self.doingTask = True
+
+        elif self.doingTask:
+            #Aqui é onde testamos a confirmação de fim de movimento pelo linux CNC.
+            if not self.controller.isMoving():
+                self.jog_buffer.pop(0)
+                self.doingTask = False
+
+    def EXEC_PROGRAM(self):
+        #o movimento se divide no ciclo Wait->DoOp->SendEndOp->Wait
+        #estou considerando que activeProgram é uma lista de listas contendo Basc, Rot, Vel, FimOp e Inspect
+        if self.prg_point < len(self.activeProgram) and not self.controller.isMoving() and not self.doingTask:
+            if self.waitForRobot:
+                #adicionar aqui a leitura MODBUS de robô OK.
+                if self.MB.readCell_control()[self.MB.ADDR_MESA_START_OP]:
+                    self.waitForRobot = False
+                #se leitura modbus ROBO OK True, waitForRobot = False
+            elif self.waitForInspect:
+                if self.MB.readCell_control()[self.MB.ADDR_MESA_START_OP]:
+                    #chamar modo inspeção e no fim da inspeção setar wait For Inspect False.
+                    self.MB.writeMesaEndOp()
+                    self.waitForRobot = True
+                #se a leitura ROBO OK True, Chama o modo Inspeção, no fim do modo inspeção waitForInspect = False, Mesa OK e waitForRobot = True.
+            elif not self.waitForInspect and not self.waitForRobot:
+                self.controller.setMachinePos(self.activeProgram[self.prg_point][0],self.activeProgram[self.prg_point][1],self.activeProgram[self.prg_point][2])
+                self.JPA.TASK_EXEC = 1
+                self.doingTask = True
+
+        elif self.doingTask:
+            #Aqui é onde testamos a confirmação de fim de movimento pelo linux CNC.
+            if not self.controller.isMoving():
+                if self.activeProgram[self.prg_point][3] == 1:
+                    self.MB.writeMesaEndOP()
+                    self.JPA.TASK_EXEC = 0
+                    self.waitForRobot = True
+                elif self.activeProgram[self.prg_point][4] == 1:
+                    self.MB.writeMesaEndOP()
+                    self.JPA.TASK_EXEC = 0
+                    self.waitForInspect = True
+                self.prg_point = self.prg_point + 1
+                self.doingTask = False
+
+        elif self.prg_point >= len(self.activeProgram) and not self.doingTask:
+            self.waitForRobot = False
+            self.waitForInspect = False
+            self.state = "stoped"
+
 
     def HOME_CYCLE(self):
         if not self.homeInit:
@@ -228,12 +287,5 @@ class Main:
                     else:
                         self.bascHomedFine = True
                     self.homeCommand = False
-
-
-
-    def IS_MOVING(self):
-        #ANALISA OS PINOS DE MOVIMENTO SE COUNTS == POSITION-CMD E RETORNA
-        MC = MACHINE_CONTROLL.Machine_control()
-        MC.h
 
 Main()
