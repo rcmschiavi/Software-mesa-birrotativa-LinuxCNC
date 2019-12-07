@@ -46,22 +46,43 @@ class Machine_control:
 
     def calcSpeed(self,speed,position_basc,position_rot):
         #Lógica para que a velocidade em cada eixo seja equivalente ao movimento
+        #A velocidade será calculada com base no tempo do que demoramais executar o movimento
+        #A trajetória terá velocidade média igual a velocidade determinada e o movimento mais demorado terá essa velocidade
+        pos_i_rot, pos_i_basc = self.getPosition()
+        dif_pos_rot = abs(position_rot - pos_i_rot)
+        dif_pos_basc = abs(position_basc - pos_i_basc)
+        t_rot = dif_pos_rot/speed
+        t_basc = dif_pos_basc/speed
+        if t_basc>dif_pos_rot:
+            #Velocidade de rotação será diminuida
+            t_rot = t_basc
+            speed_basc = speed
+            speed_rot = dif_pos_rot/t_rot
+            return [speed_rot, speed_basc]
+        else:
+            #Velocidade de bascula será diminuida
+            t_basc = t_rot
+            speed_rot = speed
+            speed_basc = dif_pos_basc / t_basc
+            return [speed_rot, speed_basc]
 
 
-    def setSpeed(self, speed_basc, speed_rot):
+    def setSpeed(self, speed_rot, speed_basc):
         hal.set_p("stepgen.0.maxvel", speed_basc) #Precisa ser uma string
         hal.set_p("stepgen.1.maxvel", speed_rot)
 
     def getPosition(self):
-        basc_pos = self.h["get_position_basc"]
-        rot_pos = self.h["get_position_rot"]
-        return [basc_pos,rot_pos]
+        pos_basc = self.h["get_position_basc"]
+        pos_rot = self.h["get_position_rot"]
+        return [pos_rot,pos_basc]
 
     def setMachinePos(self,position_basc,position_rot, speed):
-        speed_basc, speed_rot = self.calcSpeed(speed, position_basc,position_rot)
-        self.setSpeed(speed_basc, speed_rot)
+        speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
+        self.setSpeed(speed_rot, speed_basc)
         self.h["set_position_basc"] = position_basc
         self.h["set_position_rot"] = position_rot
+        self.h["enable_basc"] = True
+        self.h["enable_rot"] = True
         return
 
     def setAxisPos(self,axis,pos,speed):
@@ -74,12 +95,12 @@ class Machine_control:
             hal.set_p("stepgen.1.maxvel", speed)
         return
 
-    def stop_axis(self, axis):
+    def stopAxis(self, axis):
         if axis==self.ROT_AXIS:
-            hal.h["enable_rot"] = False
+            self.h["enable_rot"] = False
             self.h["set_position_rot"] = self.h["get_position_rot"]
         elif axis==self.BASC_AXIS:
-            hal.h["enable_basc"] = False
+            self.h["enable_basc"] = False
             self.h["set_position_basc"] = self.h["get_position_basc"]
         return
 
