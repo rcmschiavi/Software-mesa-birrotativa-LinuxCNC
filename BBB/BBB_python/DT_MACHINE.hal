@@ -14,6 +14,9 @@ addf bb_gpio.write fast
 
 setp stepgen.0.position-scale 40.75
 setp stepgen.1.position-scale 300
+# mais ou menos 3 segundos para cada eixo alcançar velocidade máxima
+setp stepgen.0.maxaccel 8
+setp stepgen.1.maxaccel 1
 
 net pos_b stepgen.0.position-cmd <= machine_controll.set_position_b
 net pos_c stepgen.1.position-cmd <= machine_controll.set_position_c

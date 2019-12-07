@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import hal, time
+# coding: utf-8
+import hal, time, math
 
 class Machine_control:
 
@@ -78,6 +79,8 @@ class Machine_control:
 
     def setMachinePos(self,position_basc,position_rot, speed):
         speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
+        if speed_rot>self.maxvel_rot or speed_basc>self.maxvel_basc:
+            if
         self.setSpeed(speed_rot, speed_basc)
         self.h["set_position_basc"] = position_basc
         self.h["set_position_rot"] = position_rot
@@ -86,7 +89,6 @@ class Machine_control:
         return
 
     def setAxisPos(self,axis,pos,speed):
-        #Seria interessante ter a velocidade aqui
         if axis==0:
             self.h["set_position_rot"] = pos
             hal.set_p("stepgen.0.maxvel", speed)
@@ -112,6 +114,12 @@ class Machine_control:
         else:
             return None
 
+    def isMoving(self):
+        # Testa se a posição atual dos steps é igual a posição do count arredondado em 3 casas
+        if round(self.h["get_position_rot"], 3) == self.h["set_position_rot"] and round(self.h["get_position_rot"],3) == self.h["set_position_rot"]:
+            return False
+        else:
+            return True
 
 MC = Machine_control()
 
