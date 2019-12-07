@@ -2,15 +2,18 @@
 import hal, time
 
 class Machine_control:
+
     axisBasc = {
         "homeSpeed": 3,
         "homeSpeedFine": 1,
-        "axisIndex": 1
+        "axisIndex": 1,
+        "homePos": -180
     }
     axisRot = {
         "homeSpeed": 25,
         "homeSpeedFine": 10,
-        "axisIndex": 0
+        "axisIndex": 0,
+        "homePos": 360
     }
 
     def __init__(self):
@@ -23,8 +26,6 @@ class Machine_control:
         self.ROT_AXIS = 0
         self.init_pins()
         self.init_params()
-
-    def axis
 
     def init_pins(self):
         self.h.newpin("set_position_basc", hal.HAL_FLOAT, hal.HAL_OUT)
@@ -43,12 +44,11 @@ class Machine_control:
         hal.set_p("stepgen.0.maxaccel", self.maxAccel_basc)
         hal.set_p("stepgen.1.maxaccel", self.maxAccel_rot)
 
-    def calcSpeed(self,speed):
-
-
-    def setSpeed(self, speed):
+    def calcSpeed(self,speed,position_basc,position_rot):
         #Lógica para que a velocidade em cada eixo seja equivalente ao movimento
-        speed_basc, speed_rot = self.calcSpeed(speed)
+
+
+    def setSpeed(self, speed_basc, speed_rot):
         hal.set_p("stepgen.0.maxvel", speed_basc) #Precisa ser uma string
         hal.set_p("stepgen.1.maxvel", speed_rot)
 
@@ -58,7 +58,8 @@ class Machine_control:
         return [basc_pos,rot_pos]
 
     def setMachinePos(self,position_basc,position_rot, speed):
-        self.setSpeed(speed)
+        speed_basc, speed_rot = self.calcSpeed(speed, position_basc,position_rot)
+        self.setSpeed(speed_basc, speed_rot)
         self.h["set_position_basc"] = position_basc
         self.h["set_position_rot"] = position_rot
         return
