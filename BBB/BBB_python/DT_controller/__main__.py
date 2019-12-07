@@ -105,7 +105,7 @@ class Main:
             self.state = "STOPPED"
             return
 
-        elif mode=="HOME":
+        elif mode == "HOME":
                 self.state = "HOMING"
                 self.JPA.HOMED = 0
                 self.JPA.HOMING = 1
@@ -132,16 +132,15 @@ class Main:
                 self.qSend.put(2, data)
 
             elif mode=="CYCSTART":
-                self.JPA.EXEC_PGR=1
+                self.JPA.EXEC_PGR = 1
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
 
-            if len(self.activeProgram):
+            if self.JPA.EXEC_PGR == 1:
                 self.EXEC_PROGRAM()
             else:
                 #Não há programa válido
                 self.state="STOPPED"
-                self.JPA.EXEC_PGR=0
                 # status aqui
 
         elif self.state == "JOGGING" or mode == "JOG":
@@ -216,7 +215,10 @@ class Main:
         elif self.prg_point >= len(self.activeProgram) and not self.doingTask:
             self.waitForRobot = False
             self.waitForInspect = False
-            self.state = "stoped"
+            self.JPA.TASK_EXEC = 0
+            self.JPA.EXEC_PGR = 0
+            #status aqui
+
 
 
     def HOME_CYCLE(self):
