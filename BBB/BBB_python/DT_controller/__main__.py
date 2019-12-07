@@ -33,6 +33,7 @@ class Main:
         self.qRec = Queue.Queue()
         self.qSend = Queue.PriorityQueue()
         self.JPA = jsonPatternArray.JsonPatternArray()
+        self.controller = MACHINE_CONTROLL.Machine_control()
         #self.c = TCP.Th(self.qRec, self.qSend)
         #self.c.start()
         #self.save_stat = TCP.save_status.Save_file()
@@ -42,6 +43,17 @@ class Main:
         self.prg_point = 0
         self.jog_buffer = []
         self.is_moving = False
+        self.axisBasc = {
+            "homeSpeed": 3,
+            "homeSpeedFine": 1,
+            "axisIndex": 1
+        }
+        self.axisRot = {
+            "homeSpeed": 25,
+            "homeSpeedFine": 10,
+            "axisIndex": 0
+        }
+        self.homeCommand = False
         #self.MB = modbus.Modbus()
 
 
@@ -140,24 +152,27 @@ class Main:
 
     def HOME_CYCLE(self):
         #Home do primeiro eixo
-        self.HOME_AXIS(0)
-        self.HOME_AXIS(1)
-        self.JPA.HOMING = 0
-        self.JPA.HOMED = 1
+        self.homeCommand = False
+        if self.HOME_AXIS(self.axisBasc):
+            self.HOME_AXIS(self.axisRot):
+            self.JPA.HOMING = 0
+            self.JPA.HOMED = 1
 
 
         pass
 
-    def HOME_AXIS(self, axis):
-        #Altera a velocidade dos eixos para uma velocidade razoável
-        #FICA INCREMENTANDO O POSITION-CDM e lendo o fim de curso em um pooling até achar o fim de curso
-        #RECUA NA MESMA VELOCIDADE ATÉ DETECTAR DE NOVO O SENSOR
-        #DIMINUI AINDA MAIS A VELOCIDADE
-        #AVANCA DE NOVO COM PULSOS MENORES E CONTINUA LENDO
+    def HOME_AXIS(self, axis, mode):
+        if(mode == "normal"):
+            #Envia o comando na primeira iteração e depois espera pelo acionamento do sensor.
+            if not self.homeCommand:
+                self.controller.setAxisPos(axis.get("axisIndex"), -180, axis.get("homeSpeed"))
+                self.homeCommand = True
+            else:
+                if(self.controller.readSensor(0) == True):
+                    self.controller.stopAxis(axis.get("axisIndex"))
+                    return True
+        elif(mode == "fine"):
 
-
-
-        pass
 
 
     def IS_MOVING(self):
