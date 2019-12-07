@@ -4,62 +4,64 @@ import hal, time
 class Machine_control:
     def __init__(self):
         self.h = hal.component("machine_controll")
+        self.maxvel_basc = 25 #Graus/s
+        self.maxvel_rot = 3
+        self.maxAccel_basc = 10 #Graus/s^2
+        self.maxAccel_rot = 10
         self.init_pins()
+        self.init_params()
         self.roda()
 
     def init_pins(self):
-        self.h.newpin("set_position_b", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_position_c", hal.HAL_FLOAT, hal.HAL_OUT)
-        '''
-        Não é possível alterar o parametro, devemos definir uma velocidade máxima e enviar a posição de modo 
-        a gerar a velocidade
-        self.h.newpin("set_speed_b", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_speed_c", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_accel_b", hal.HAL_FLOAT, hal.HAL_OUT)
-        self.h.newpin("set_accel_c", hal.HAL_FLOAT, hal.HAL_OUT)
-        '''
-        self.h.newpin("dir_b", hal.HAL_BIT, hal.HAL_OUT)
-        self.h.newpin("dir_c", hal.HAL_BIT, hal.HAL_OUT)
-        self.h.newpin("enable_b", hal.HAL_BIT, hal.HAL_OUT)
-        self.h.newpin("enable_c", hal.HAL_BIT, hal.HAL_OUT)
-        self.h.newpin("sensor_b", hal.HAL_BIT, hal.HAL_IN)
-        self.h.newpin("sensor_c", hal.HAL_BIT, hal.HAL_IN)
-        self.h.newpin("get_position_b", hal.HAL_FLOAT, hal.HAL_IN)
-        self.h.newpin("get_position_c", hal.HAL_FLOAT, hal.HAL_IN)
+        self.h.newpin("set_position_basc", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.h.newpin("set_position_rot", hal.HAL_FLOAT, hal.HAL_OUT)
+        self.h.newpin("enable_basc", hal.HAL_BIT, hal.HAL_OUT)
+        self.h.newpin("enable_rot", hal.HAL_BIT, hal.HAL_OUT)
+        self.h.newpin("sensor_basc", hal.HAL_BIT, hal.HAL_IN)
+        self.h.newpin("sensor_rot", hal.HAL_BIT, hal.HAL_IN)
+        self.h.newpin("get_position_basc", hal.HAL_FLOAT, hal.HAL_IN)
+        self.h.newpin("get_position_rot", hal.HAL_FLOAT, hal.HAL_IN)
 
     def init_params(self):
+        hal.set_p("stepgen.0.maxvel", self.maxvel_basc) #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", self.maxvel_rot)
+        hal.set_p("stepgen.0.maxaccel", self.maxAccel_basc)
+        hal.set_p("stepgen.1.maxaccel", self.maxAccel_rot)
 
-        hal.set_p("stepgen.0.maxvel", "25") #Precisa ser uma string
-        hal.set_p("stepgen.1.maxvel", "3")
-        hal.set_p("stepgen.0.maxaccel", "10")
-        hal.set_p("stepgen.1.maxaccel", "10")
-
-
-
-
-    def setSpeed(self, speed):
+    def setSpeed(self, speed_basc, speed_rot):
         #Lógica para que a velocidade em cada eixo seja equivalente ao movimento
-        self.h["set_speed_b"] = speed
-        self.h["set_speed_b"] = speed
+        hal.set_p("stepgen.0.maxvel", speed_basc) #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", speed_rot)
 
-    def setPosition(self,position_b,position_c):
-        self.h["set_position_b"] = position_b
-        self.h["set_position_c"] = position_c
+    def getPosition(self):
+        basc_pos = self.h["get_position_basc"]
+        rot_pos = self.h["get_position_rot"]
+        return [basc_pos,rot_pos]
+
+    def setMachinePos(self,position_basc,position_rot, speed):
+        self.h["set_position_basc"] = position_basc
+        self.h["set_position_rot"] = position_rot
+        return
+
+    def setAxisPos(self,axis,pos,speed):
+        #Seria interessante ter a velocidade aqui
+        if axis==0:
+            self.h["set_position_basc"] = pos
+            hal.set_p("stepgen.1.maxvel", speed)
+        elif axis==1:
+            self.h["set_position_rot"] = pos
+            hal.set_p("stepgen.0.maxvel", speed)
+        return
+
 
     def readSensor(self, i):
         if i==0:
             return self.h["sensor_b"]
         elif i==1:
             return self.h["sensor_c"]
-        else: return None
+        else:
+            return None
 
-    def roda(self):
-        i=0
-        while i<10:
-            self.setSpeed(10+i*3)
-            self.setPosition(5+3*i,7+3*i)
-            time.sleep(5)
-            i+=1
 
 MC = Machine_control()
 

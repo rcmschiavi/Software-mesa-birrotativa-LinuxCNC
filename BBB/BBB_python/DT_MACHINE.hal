@@ -1,17 +1,19 @@
 # Carrega o programa em python em modo aguarda ficar pronto
-loadusr -W DT_py
+
 
 loadrt hal_bb_gpio output_pins=914,916,918,922 inputpins=815,817
 loadrt stepgen step_type=0,0 ctrl_type=p,p
+loadusr -W DT_py
 loadrt threads name1=fast fp1=0 period1=50000 name2=slow period2=1000000
+
 
 addf stepgen.make-pulses fast
 addf stepgen.update-freq slow
 addf stepgen.capture-position slow
 addf bb_gpio.write fast
 
-setp stepgen.0.position-scale 30
-setp stepgen.1.position-scale 3
+setp stepgen.0.position-scale 40.75
+setp stepgen.1.position-scale 300
 
 net pos_b stepgen.0.position-cmd <= machine_controll.set_position_b
 net pos_c stepgen.1.position-cmd <= machine_controll.set_position_c
