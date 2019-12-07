@@ -27,6 +27,13 @@ class Machine_control:
         self.h.newpin("get_position_b", hal.HAL_FLOAT, hal.HAL_IN)
         self.h.newpin("get_position_c", hal.HAL_FLOAT, hal.HAL_IN)
 
+    def init_params(self):
+
+        hal.set_p("stepgen.0.maxvel", "25") #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", "3")
+        hal.set_p("stepgen.0.maxaccel", "10")
+        hal.set_p("stepgen.1.maxaccel", "10")
+
 
 
 
