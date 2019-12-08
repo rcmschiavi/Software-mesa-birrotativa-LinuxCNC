@@ -10,7 +10,7 @@ import TCP
 import Queue, time, json, os
 import jsonPatternArray
 import modbus
-#import MACHINE_CONTROLL
+import MACHINE_CONTROLL
 
 
 class Main:
@@ -19,7 +19,7 @@ class Main:
         self.qRec = Queue.Queue()
         self.qSend = Queue.PriorityQueue()
         self.JPA = jsonPatternArray.JsonPatternArray()
-        #self.controller = MACHINE_CONTROLL.Machine_control()
+        self.controller = MACHINE_CONTROLL.Machine_control()
         #self.c = TCP.Th(self.qRec, self.qSend)
         #self.c.start()
         #self.save_stat = TCP.save_status.Save_file()
@@ -91,10 +91,6 @@ class Main:
             data = self.JPA.STATUS()
             self.qSend.put(2, data)  # Envia o status
 
-        elif (self.state=="jogging" or self.state=="exec_prog") and (mode=="ESTOP"):
-            self.state = "STOPPED"
-            return
-
         elif mode == "HOME":
                 self.state = "HOMING"
                 self.JPA.HOMED = 0
@@ -124,6 +120,7 @@ class Main:
                 self.JPA.EXEC_PGR = 1
                 data = self.JPA.STATUS()
                 self.qSend.put(2, data)
+                self.activeProgram = self.readProgram()
 
             if self.JPA.EXEC_PGR == 1:
                 self.EXEC_PROGRAM()
@@ -155,10 +152,21 @@ class Main:
             operation = data[2]
             if operation == 0:
                 self.writeProgram(params[0])
+                self.JPA.ACTIVE_PGR = 1
+                data = self.JPA.STATUS()
+                self.qSend.put(2, data)
             elif operation == 1:
-                self.readProgram()
+                program = self.readProgram()
+                program = self.JPA.PROGRAM(program)
+                self.qSend.put(2, program)
+                self.JPA.ACTIVE_PGR = 1
+                data = self.JPA.STATUS()
+                self.qSend.put(2, data)
             elif operation == -1:
                 self.writeProgram("")
+                self.JPA.ACTIVE_PGR = 0
+                data = self.JPA.STATUS()
+                self.qSend.put(2, data)
 
 
     def EXEC_MOV(self):
@@ -219,8 +227,6 @@ class Main:
             self.JPA.EXEC_PGR = 0
             data = self.JPA.STATUS()
             self.qSend.put(2, data)
-
-
 
     def HOME_CYCLE(self):
 
@@ -311,12 +317,24 @@ class Main:
                 outfile.truncate(0)
 
     def readProgram(self):
-        program = ""
-        cur_path = os.path.dirname(__file__)
-        with open(cur_path + '/program/program.json', 'r') as outfile:
-            program = json.load(outfile)
+        program = []
+        file_name = os.path.dirname(__file__) + '/program/program.json'
+        statinfo = os.stat(file_name)
+        if statinfo.st_size:
+            with open(file_name, 'r') as outfile:
+                program = json.load(outfile)
+                program = json.dumps(program)
 
-        program = json.dumps(program)
         return str(program)
+
+    def checkProgram(self):
+        file_name = os.path.dirname(__file__) + '/program/program.json'
+        statinfo = os.stat(file_name)
+        if statinfo.st_size:
+            self.JPA.ACTIVE_PGR = 1
+        else:
+            self.JPA.ACTIVE_PGR = 0
+        data = self.JPA.STATUS()
+        self.qSend.put(2, data)
 
 M = Main()

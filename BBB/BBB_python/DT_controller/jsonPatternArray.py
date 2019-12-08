@@ -26,7 +26,7 @@ class JsonPatternArray:
         return str(data)
 
     def PROGRAM(self, program):
-        data = {"mode": "PROGRAM","params": [program]}
+        data = {"mode": "PROGRAM","params": program}
         data = json.dumps(data)
         return str(data)
 
