@@ -25,6 +25,8 @@ class Machine_control:
         self.maxAccel_rot = 10
         self.BASC_AXIS = 1
         self.ROT_AXIS = 0
+        self.HOME_POS_ROT = 0
+        self.HOME_POS_BASC = 0
         self.init_pins()
         self.init_params()
 
@@ -91,20 +93,28 @@ class Machine_control:
         if speed_basc>=self.maxvel_basc: speed_basc=self.maxvel_basc
 
         self.setSpeed(speed_rot, speed_basc)
-        self.h["set_position_basc"] = position_basc
-        self.h["set_position_rot"] = position_rot
+        self.h["set_position_basc"] = position_basc + self.HOME_POS_BASC
+        self.h["set_position_rot"] = position_rot + self.HOME_POS_ROT
         self.h["enable_basc"] = True
         self.h["enable_rot"] = True
         return
 
     def setAxisPos(self,axis,pos,speed):
         if axis==0:
-            self.h["set_position_rot"] = pos
+            self.h["set_position_rot"] = pos + self.HOME_POS_ROT
             hal.set_p("stepgen.0.maxvel", str(speed))
         elif axis==1:
-            self.h["set_position_basc"] = pos
+            self.h["set_position_basc"] = pos + self.HOME_POS_BASC
             hal.set_p("stepgen.1.maxvel", str(speed))
         return
+
+    def setAxisHome(self,axis):
+        if axis==0:
+            self.HOME_POS_ROT = self.getPosition()[0]
+        elif axis==1:
+            self.HOME_POS_BASC = self.getPosition()[1]
+        return
+
 
     def stopAxis(self, axis):
         if axis==self.ROT_AXIS:

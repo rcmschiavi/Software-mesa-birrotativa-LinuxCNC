@@ -309,8 +309,10 @@ class Main:
                     self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomedFine = True
+                        self.controller.setAxisHome(0)
                     else:
                         self.bascHomedFine = True
+                        self.controller.setAxisHome(1)
                     self.homeCommand = False
 
     def writeProgram(self, program):

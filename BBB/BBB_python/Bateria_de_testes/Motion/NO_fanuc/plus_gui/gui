@@ -10,6 +10,7 @@ Autores: Rodolfo Cavour Moretti Schiavi / Lucas Costa
 import Queue, json, os
 import jsonPatternArray
 import MACHINE_CONTROLL
+import TCP
 
 
 class Main:
@@ -21,8 +22,6 @@ class Main:
         self.controller = MACHINE_CONTROLL.Machine_control()
         self.c = TCP.Th(self.qRec, self.qSend)
         self.c.start()
-        self.save_stat = TCP.save_status.Save_file()
-        self.params = TCP.save_status.params()
         self.state = "STOPPED"
         self.jog_buffer = []
         self.activeProgram = []
@@ -50,9 +49,6 @@ class Main:
     def cycle(self):
         while True:
             self.executa_estado()
-            if not self.JPA.EXEC_PGR:
-                # Home finalizado
-                break
 
     def getMode(self):
         if not self.qRec.empty():

@@ -22,8 +22,6 @@ class Main:
         self.controller = MACHINE_CONTROLL.Machine_control()
         #self.c = TCP.Th(self.qRec, self.qSend)
         #self.c.start()
-        #self.save_stat = TCP.save_status.Save_file()
-        #self.params = TCP.save_status.params()
         self.state = "STOPPED"
         #self.cycle()
         self.jog_buffer = []
@@ -303,8 +301,10 @@ class Main:
                     self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomedFine = True
+                        self.controller.setAxisHome(0)
                     else:
                         self.bascHomedFine = True
+                        self.controller.setAxisHome(1)
                     self.homeCommand = False
 
     def writeProgram(self, program):
