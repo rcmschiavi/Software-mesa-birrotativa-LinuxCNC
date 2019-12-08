@@ -3,3 +3,8 @@ escala da mesa báscula: 300
 
 máxima velocidade rotação: 25
 máxima velocidade báscula 3
+
+Movimentação:
+
+Basc => (+ afasta do home, - aproxima do home)
+Rot => (+ horário, - antihorário)

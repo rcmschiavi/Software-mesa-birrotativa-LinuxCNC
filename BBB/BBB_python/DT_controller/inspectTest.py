@@ -2,6 +2,7 @@
 import cv2 as cv
 import numpy as np
 import modbus
+import os
 
 
 # Author: Lucas Costa Ferreira
@@ -68,7 +69,10 @@ def inspectionMode( camera, cmInPixels):
     try:
         box = np.int0(cv.boxPoints(cv.minAreaRect(wire)))
         processedImage = cameraFrame[60:420, 160:480]
+
         cv.drawContours(processedImage, [box], 0, (0, 0, 255), 2)
+        file_name = os.path.dirname(__file__) + '/picture/pic.jpg'
+        cv.imwrite(file_name, processedImage)
         print(wireLengthMm)
     except:
         print("Contorno Inválido")
@@ -115,7 +119,7 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
 
 
 def main():
-    MB = modbus.Modbus()
+    #MB = modbus.Modbus()
     camera = cv.VideoCapture(1)
     cmInPixels = 115
     DBCP = 20
@@ -123,7 +127,8 @@ def main():
 
     # Program Sequence
     initializeCapture(camera)
-    operate_wire(MB, camera, DBCP, dbcpTol)
+    inspectionMode(camera, 115)
+    #operate_wire(MB, camera, DBCP, dbcpTol)
 
     print(cmInPixels)
     endProgram(camera)

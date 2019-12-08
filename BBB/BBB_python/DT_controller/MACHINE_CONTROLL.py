@@ -59,7 +59,7 @@ class Machine_control:
         elif dif_pos_basc==0:
             return [speed, 0]
         else:
-            if t_basc>dif_pos_rot:
+            if t_basc>t_rot:
                 #Velocidade de rotação será diminuida
                 t_rot = t_basc
                 speed_basc = speed
