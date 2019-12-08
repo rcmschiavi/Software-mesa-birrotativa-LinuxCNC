@@ -7,9 +7,10 @@ Autores: Rodolfo Cavour Moretti Schiavi / Lucas Costa
 '''
 
 import TCP
-import Queue, time, json
+import Queue, time, json, os
 import jsonPatternArray
-import modbus, MACHINE_CONTROLL
+import modbus
+#import MACHINE_CONTROLL
 
 
 class Main:
@@ -18,13 +19,13 @@ class Main:
         self.qRec = Queue.Queue()
         self.qSend = Queue.PriorityQueue()
         self.JPA = jsonPatternArray.JsonPatternArray()
-        self.controller = MACHINE_CONTROLL.Machine_control()
+        #self.controller = MACHINE_CONTROLL.Machine_control()
         #self.c = TCP.Th(self.qRec, self.qSend)
         #self.c.start()
         #self.save_stat = TCP.save_status.Save_file()
         #self.params = TCP.save_status.params()
         self.state = "STOPPED"
-        self.cycle()
+        #self.cycle()
         self.jog_buffer = []
         self.activeProgram = []
         self.is_moving = False
@@ -44,7 +45,7 @@ class Main:
         self.rotHomedFine = False
         self.rotHomeBwd = False
         self.bascHomeBwd = False
-        self.MB = modbus.Modbus()
+        #self.MB = modbus.Modbus()
 
 
     def cycle(self):
@@ -55,8 +56,12 @@ class Main:
     def getMode(self):
         if not self.qRec.empty():
             data = json.loads(self.qRec.get())
-            return [data[0]["mode"],data[0]["params"]]
-            # print (self.parser.mode(data))
+            if len(data[0])==3:
+                return [data[0]["mode"], data[0]["params"], data[0]["operation"]]
+            elif len(data[0])==2:
+                return [data[0]["mode"], data[0]["params"]]
+            else:
+                return None
         else:
             return None
 
@@ -147,10 +152,14 @@ class Main:
                     self.state="STOPPED"
 
         if mode == "PROGRAM":
-            #O modo gravar programa independe dos outros modos e estados
-            pass
+            operation = data[2]
+            if operation == 0:
+                self.writeProgram(params[0])
+            elif operation == 1:
+                self.readProgram()
+            elif operation == -1:
+                self.writeProgram("")
 
-        time.sleep(5)
 
     def EXEC_MOV(self):
         if not self.controller.isMoving() and not self.doingTask:
@@ -292,4 +301,22 @@ class Main:
                         self.bascHomedFine = True
                     self.homeCommand = False
 
-Main()
+    def writeProgram(self, program):
+        cur_path = os.path.dirname(__file__)
+        with open(cur_path + '/program/program.json', 'w') as outfile:
+            if len(program):
+                json.dump(program, outfile, sort_keys=True, indent=4)
+            else:
+                #Limpa o arquivo
+                outfile.truncate(0)
+
+    def readProgram(self):
+        program = ""
+        cur_path = os.path.dirname(__file__)
+        with open(cur_path + '/program/program.json', 'r') as outfile:
+            program = json.load(outfile)
+
+        program = json.dumps(program)
+        return str(program)
+
+M = Main()

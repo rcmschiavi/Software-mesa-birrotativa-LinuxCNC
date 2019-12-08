@@ -170,8 +170,6 @@ class Modbus:
         self.readCell_control()
         return self.MESA_START_OP
 
-
-
     def connectModbus(self):
 
         self.c = ModbusClient()
