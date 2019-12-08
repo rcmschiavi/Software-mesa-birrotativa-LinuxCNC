@@ -1,1 +1,3 @@
 Arquivos de inspeção do sistema de visão para controle de arame.
+O código InspectCalib é para a calibração de cm/pixel
+O código InspectTest é apenas a medição com cm/pixel constante.
