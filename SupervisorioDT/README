@@ -14,7 +14,8 @@ Progresso da Implementação:
 - Parada de emergência externa adicionada;
 - Implementar botões de recebimento e deleção de programa;
 - Intertravamento entre GUI e BBB;
-- Sistema de envio de Imagens e Streaming (0%) - Prioridade Alta
+- Sistema de envio de Imagens e Streaming;
+- Configuração de movimento Linear e de Junta;
 - Arquivos de configuração padrão (50%); - Baixa Prioridade
 - Suporte e ajuda ao usuário (69%); - Baixa Prioridade
 
