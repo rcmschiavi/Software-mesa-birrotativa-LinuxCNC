@@ -54,18 +54,23 @@ class Machine_control:
         dif_pos_basc = abs(position_basc - pos_i_basc)
         t_rot = dif_pos_rot/speed
         t_basc = dif_pos_basc/speed
-        if t_basc>dif_pos_rot:
-            #Velocidade de rotação será diminuida
-            t_rot = t_basc
-            speed_basc = speed
-            speed_rot = dif_pos_rot/t_rot
-            return [speed_rot, speed_basc]
+        if dif_pos_rot==0:
+            return [0, speed]
+        elif dif_pos_basc==0:
+            return [speed, 0]
         else:
-            #Velocidade de bascula será diminuida
-            t_basc = t_rot
-            speed_rot = speed
-            speed_basc = dif_pos_basc / t_basc
-            return [speed_rot, speed_basc]
+            if t_basc>dif_pos_rot:
+                #Velocidade de rotação será diminuida
+                t_rot = t_basc
+                speed_basc = speed
+                speed_rot = dif_pos_rot/t_rot
+                return [speed_rot, speed_basc]
+            else:
+                #Velocidade de bascula será diminuida
+                t_basc = t_rot
+                speed_rot = speed
+                speed_basc = dif_pos_basc / t_basc
+                return [speed_rot, speed_basc]
 
 
     def setSpeed(self, speed_rot, speed_basc):
@@ -77,10 +82,14 @@ class Machine_control:
         pos_rot = self.h["get_position_rot"]
         return [pos_rot,pos_basc]
 
-    def setMachinePos(self,position_basc,position_rot, speed):
+    def setMachinePos(self,position_rot,position_basc, speed):
         speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
-        if speed_rot>self.maxvel_rot or speed_basc>self.maxvel_basc:
-            if
+        speed_reduction = 0
+        while speed_rot>=self.maxvel_rot or speed_basc>=self.maxvel_basc:
+            #Reduz a velocidade até ser um valor
+            speed_rot, speed_basc = self.calcSpeed(speed*(1-0.05*speed_reduction), position_basc,position_rot)
+            speed_reduction+=1
+
         self.setSpeed(speed_rot, speed_basc)
         self.h["set_position_basc"] = position_basc
         self.h["set_position_rot"] = position_rot
