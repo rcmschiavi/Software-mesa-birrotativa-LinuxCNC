@@ -17,6 +17,11 @@
     //Array de inspeção, inspectionRESULT, 0-operando,1-ok, -1 erro
     "mode": "INSPECTION",
     "params": 1
+  },
+    {
+    //Ativa o modo de recebimento da imagem da inspeção
+    "mode": "Frame",
+    "params": int(size)
   }
 ]
 

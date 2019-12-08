@@ -52,7 +52,6 @@ class Connection:
         self.connection.settimeout(self.callback_latency)
         print ("Conectado à: "+  str(self.client_address))
 
-
     def wait_message(self):
         try:
             while True:

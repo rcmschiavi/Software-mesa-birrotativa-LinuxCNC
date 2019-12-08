@@ -89,47 +89,6 @@ class Modbus:
 
         return CELL_CONTROL
 
-# #Partes inúteis, considerando as rungs do endereço modbus e a saida do avanço de arame ser um fio
-#
-#     def writeInspectionParams(self, data):
-#         ''' #Escreve o valor nos registradores de parâmetros de inspeção. Todas as variáveis já vem tratadas'''
-#         SETPOINT_ARAME = data[0]
-#         ARAME_ATUAL = data[1]
-#         TOL_ARAME = data[2]
-#         REGs_INSP = [SETPOINT_ARAME,ARAME_ATUAL,TOL_ARAME]
-#         i_writen = 0
-#         for REG,REG_VALUE in enumerate(REGs_INSP):
-#             if self.c.write_multiple_registers(REG, [REG_VALUE]):
-#                 print("write ok on register: " + str(REG))
-#                 i_writen+=1
-#             else:
-#                 print("Error writing on register: " + str(REG))
-#         if i_writen==3:
-#             return True
-#         else:
-#             return False
-#
-#     def writeUpdateWireLenght(self,wireLenght):
-#         op_succeed = self.c.write_multiple_registers(1, [wireLenght])
-#         return op_succeed
-#
-#     def writeActivateInspect(self):
-#         CELL_CONTROL = self.readCell_control()
-#         CELL_CONTROL[self.ADDR_MODO_INSPEC] = True
-#         value = self.boolLstToDecimal(CELL_CONTROL)
-#         print value
-#         op_succeed = self.c.write_multiple_registers(3, [value])
-#         return op_succeed
-#
-#     def writeDeactivateInspect(self):
-#
-#         CELL_CONTROL = self.readCell_control()
-#         CELL_CONTROL[self.ADDR_MODO_INSPEC] = False
-#         value = self.boolLstToDecimal(CELL_CONTROL)
-#         print value
-#         op_succeed = self.c.write_multiple_registers(3, [value])
-#         return op_succeed
-
     def writeActivateInspect(self):
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[self.ADDR_MODO_INSPEC] = True
@@ -192,6 +151,13 @@ class Modbus:
 
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[self.ADDR_BBB_ESTOP] = True
+        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, CELL_CONTROL)
+        return op_succeed
+
+    def writeMesaEndOP(self):
+
+        CELL_CONTROL = self.readCell_control()
+        CELL_CONTROL[self.ADDR_MESA_END_OP] = True
         op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, CELL_CONTROL)
         return op_succeed
 

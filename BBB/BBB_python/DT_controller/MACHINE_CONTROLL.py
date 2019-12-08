@@ -85,10 +85,9 @@ class Machine_control:
     def setMachinePos(self,position_rot,position_basc, speed):
         speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
         speed_reduction = 0
-        while speed_rot>=self.maxvel_rot or speed_basc>=self.maxvel_basc:
-            #Reduz a velocidade até ser um valor
-            speed_rot, speed_basc = self.calcSpeed(speed*(1-0.05*speed_reduction), position_basc,position_rot)
-            speed_reduction+=1
+        if speed_rot>=self.maxvel_rot: speed_basc=self.maxvel_basc
+
+        if speed_basc>=self.maxvel_basc: speed_basc=self.maxvel_basc
 
         self.setSpeed(speed_rot, speed_basc)
         self.h["set_position_basc"] = position_basc
