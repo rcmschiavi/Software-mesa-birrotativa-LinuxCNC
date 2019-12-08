@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding: utf-8
 '''
 Código para testar a rotina de program separado na BBB
@@ -18,10 +19,10 @@ class Main:
         self.qSend = Queue.PriorityQueue()
         self.JPA = jsonPatternArray.JsonPatternArray()
         self.controller = MACHINE_CONTROLL.Machine_control()
-        # self.c = TCP.Th(self.qRec, self.qSend)
-        # self.c.start()
-        # self.save_stat = TCP.save_status.Save_file()
-        # self.params = TCP.save_status.params()
+        self.c = TCP.Th(self.qRec, self.qSend)
+        self.c.start()
+        self.save_stat = TCP.save_status.Save_file()
+        self.params = TCP.save_status.params()
         self.state = "STOPPED"
         self.jog_buffer = []
         self.activeProgram = []
@@ -47,10 +48,8 @@ class Main:
         self.cycle()
 
     def cycle(self):
-        self.activeProgram = self.readProgram()
-        self.JPA.EXEC_PGR = 1
         while True:
-            self.EXEC_PROGRAM()
+            self.executa_estado()
             if not self.JPA.EXEC_PGR:
                 # Home finalizado
                 break

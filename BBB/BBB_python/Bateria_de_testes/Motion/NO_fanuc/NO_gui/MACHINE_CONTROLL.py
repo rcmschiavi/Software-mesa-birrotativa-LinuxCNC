@@ -40,10 +40,10 @@ class Machine_control:
         self.h.newpin("get_position_rot", hal.HAL_FLOAT, hal.HAL_IN)
 
     def init_params(self):
-        hal.set_p("stepgen.0.maxvel", self.maxvel_basc) #Precisa ser uma string
-        hal.set_p("stepgen.1.maxvel", self.maxvel_rot)
-        hal.set_p("stepgen.0.maxaccel", self.maxAccel_basc)
-        hal.set_p("stepgen.1.maxaccel", self.maxAccel_rot)
+        hal.set_p("stepgen.0.maxvel", str(self.maxvel_basc)) #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", str(self.maxvel_rot))
+        hal.set_p("stepgen.0.maxaccel", str(self.maxAccel_basc))
+        hal.set_p("stepgen.1.maxaccel", str(self.maxAccel_rot))
 
     def calcSpeed(self,speed,position_basc,position_rot):
         #Lógica para que a velocidade em cada eixo seja equivalente ao movimento
@@ -74,8 +74,8 @@ class Machine_control:
 
 
     def setSpeed(self, speed_rot, speed_basc):
-        hal.set_p("stepgen.0.maxvel", speed_basc) #Precisa ser uma string
-        hal.set_p("stepgen.1.maxvel", speed_rot)
+        hal.set_p("stepgen.0.maxvel", str(speed_basc)) #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", str(speed_rot))
 
     def getPosition(self):
         pos_basc = self.h["get_position_basc"]
@@ -99,10 +99,10 @@ class Machine_control:
     def setAxisPos(self,axis,pos,speed):
         if axis==0:
             self.h["set_position_rot"] = pos
-            hal.set_p("stepgen.0.maxvel", speed)
+            hal.set_p("stepgen.0.maxvel", str(speed))
         elif axis==1:
             self.h["set_position_basc"] = pos
-            hal.set_p("stepgen.1.maxvel", speed)
+            hal.set_p("stepgen.1.maxvel", str(speed))
         return
 
     def stopAxis(self, axis):
@@ -129,6 +129,5 @@ class Machine_control:
         else:
             return True
 
-MC = Machine_control()
 
 

@@ -1,6 +1,7 @@
+#!/usr/bin/python
 # coding: utf-8
 '''
-Código para testar a rotina de home separado na BBB
+Código para testar a rotina de program separado na BBB
 
 Autores: Rodolfo Cavour Moretti Schiavi / Lucas Costa
 
@@ -23,7 +24,7 @@ class Main:
         # self.save_stat = TCP.save_status.Save_file()
         # self.params = TCP.save_status.params()
         self.state = "STOPPED"
-        self.jog_buffer = [[0,10,3],[0,0,3],[10,0,3],[10,10,3][0,0,3]]
+        self.jog_buffer = []
         self.activeProgram = []
         self.is_moving = False
 
@@ -47,10 +48,12 @@ class Main:
         self.cycle()
 
     def cycle(self):
+        self.activeProgram = self.readProgram()
+        self.JPA.EXEC_PGR = 1
         while True:
-            self.EXEC_MOV()
-            if not len(self.jog_buffer):
-                # Jog finalizado
+            self.EXEC_PROGRAM()
+            if not self.JPA.EXEC_PGR:
+                # Home finalizado
                 break
 
     def getMode(self):
