@@ -38,6 +38,7 @@ class Machine_control:
         self.h.newpin("sensor_rot", hal.HAL_BIT, hal.HAL_IN)
         self.h.newpin("get_position_basc", hal.HAL_FLOAT, hal.HAL_IN)
         self.h.newpin("get_position_rot", hal.HAL_FLOAT, hal.HAL_IN)
+        self.h.ready()
 
     def init_params(self):
         hal.set_p("stepgen.0.maxvel", str(self.maxvel_basc)) #Precisa ser uma string
@@ -90,8 +91,8 @@ class Machine_control:
         if speed_basc>=self.maxvel_basc: speed_basc=self.maxvel_basc
 
         self.setSpeed(speed_rot, speed_basc)
-        self.h["set_position_basc"] = str(position_basc)
-        self.h["set_position_rot"] = str(position_rot)
+        self.h["set_position_basc"] = position_basc
+        self.h["set_position_rot"] = position_rot
         self.h["enable_basc"] = True
         self.h["enable_rot"] = True
         return
@@ -128,5 +129,6 @@ class Machine_control:
             return False
         else:
             return True
+
 
 

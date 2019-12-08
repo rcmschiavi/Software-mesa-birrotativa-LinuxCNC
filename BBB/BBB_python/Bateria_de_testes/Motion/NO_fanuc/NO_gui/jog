@@ -52,6 +52,7 @@ class Main:
             self.EXEC_MOV()
             if not len(self.jog_buffer):
                 # Jog finalizado
+                print("Fim do JOG")
                 break
 
     def getMode(self):

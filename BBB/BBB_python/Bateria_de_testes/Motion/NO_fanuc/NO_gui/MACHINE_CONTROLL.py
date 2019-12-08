@@ -38,6 +38,7 @@ class Machine_control:
         self.h.newpin("sensor_rot", hal.HAL_BIT, hal.HAL_IN)
         self.h.newpin("get_position_basc", hal.HAL_FLOAT, hal.HAL_IN)
         self.h.newpin("get_position_rot", hal.HAL_FLOAT, hal.HAL_IN)
+        self.h.ready()
 
     def init_params(self):
         hal.set_p("stepgen.0.maxvel", str(self.maxvel_basc)) #Precisa ser uma string

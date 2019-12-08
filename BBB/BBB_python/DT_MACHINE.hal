@@ -3,7 +3,7 @@
 
 loadrt hal_bb_gpio output_pins=914,916,918,922 input_pins=815,817
 loadrt stepgen step_type=0,0 ctrl_type=p,p
-loadusr ./jog
+loadusr -Wn machine_controll ./jog
 loadrt threads name1=fast fp1=0 period1=50000 name2=slow period2=1000000
 
 
@@ -27,8 +27,8 @@ net enable_c stepgen.1.enable <= machine_controll.enable_basc
 net sensor_b machine_controll.sensor_basc <= bb_gpio.p8.in-15
 net sensor_c machine_controll.sensor_rot <= bb_gpio.p8.in-17
 
-net pos_b_now machine_controll.get_position_rot <= stepgen.0.counts
-net pos_c_now machine_controll.get_position_basc <= stepgen.1.counts
+net pos_b_now machine_controll.get_position_rot <= stepgen.0.position-fb
+net pos_c_now machine_controll.get_position_basc <= stepgen.1.position-fb
 
 net step_b bb_gpio.p9.out-14 <= stepgen.0.step
 net step_c bb_gpio.p9.out-18 <= stepgen.1.step
