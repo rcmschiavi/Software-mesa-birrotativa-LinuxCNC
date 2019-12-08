@@ -12,7 +12,8 @@ O código simples para a execução de captura de um frame é: Teste_webcam_BBB.
 
 - Instalar a biblioteca de python v4l2capture-l2 (https://github.com/gebart/python-v4l2capture) para controlar os parametros da câmera via python. É necessário que seja essa, pois ela realiza a conversão para MJPG, a disponível no pip install não funcionou, talvez futuramente corrijam o bug 
 
-- Códigos utilizados como exemplo:
-    - https://github.com/gebart/python-v4l2capture/blob/master/capture_video.py
-    - https://gist.github.com/royshil/0f674c96281b686a9a62
+    - Códigos utilizados como exemplo:
+        - https://github.com/gebart/python-v4l2capture/blob/master/capture_video.py
+        - https://gist.github.com/royshil/0f674c96281b686a9a62
 
+- Instalar o opencv através do comando "sudo pip install opencv-python"

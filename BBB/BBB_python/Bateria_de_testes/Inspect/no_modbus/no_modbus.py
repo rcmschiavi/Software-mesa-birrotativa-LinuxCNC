@@ -13,10 +13,7 @@
 #Foram necessárias algumas modificações para funcionar na BBB, o readMe tem informações para resolução de problemas
 
 import cv2 as cv
-import numpy as np
 import v4l2capture
-import modbus
-import os
 import numpy as np
 import select
 
@@ -87,12 +84,10 @@ def inspectionMode(camera, cmInPixels):
 
 
 
-def operate_wire(MB, camera, DBCP, dbcpTol):
-    MB.writeActivateInspect()
+def operate_wire(camera, DBCP, dbcpTol):
+
     avanco = False
-    add_fwrd = 0
-    MB.setTimer(125)
-    MB.writeFwdWire()
+
     while True:
 
         wireLengthMm = inspectionMode(camera, 115)
@@ -102,39 +97,32 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
             #Envia modbus modo_inspecao = False
             #Envia mesa_end_op = True e depois reseta depois de 100ms
             print "Inspeçao finalizada"
-            MB.writeDeactivateInspect()
             return True
         else:
             if error<0:
                 print "Recua"
                 value =150 #Função que resulta o tempo de recuo para um determinado erro
-
-                MB.setTimer(value)
-                MB.writeBackWire()
                 avanco = False
             else:
                 print "Avanca"
-                MB.setTimer(100)
-                MB.writeFwdWire()
                 avanco = True
 
 
 
 def main():
-    #MB = modbus.Modbus()
+
     camera = v4l2capture.Video_device("/dev/video8")
     cmInPixels = 115
-    DBCP = 20
-    dbcpTol = 2
+    DBCP = input("Insira o DBCP: ")
+    dbcpTol = input("Insira a tolerância: ")
 
-    # Program Sequence
+
     initializeCapture(camera)
     inspectionMode(camera, 115)
-    #operate_wire(MB, camera, DBCP, dbcpTol)
-
+    operate_wire(camera,DBCP,dbcpTol)
     print(cmInPixels)
     camera.close()
-#endProgram(camera)
+
 
 main()
 

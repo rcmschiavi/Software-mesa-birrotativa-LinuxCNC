@@ -71,7 +71,6 @@ def inspectionMode(camera, cmInPixels):
 
         wireLengthMm, wire = getWireLengthFromImage(frame, cmInPixels)
         print wireLengthMm
-        #print wire
         try:
             #Não funciona na BBB
             #box = np.int0(cv.cv.boxPoints(cv.minAreaRect(wire)))
@@ -121,20 +120,20 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
 
 
 def main():
-    #MB = modbus.Modbus()
+    MB = modbus.Modbus()
     camera = v4l2capture.Video_device("/dev/video8")
     cmInPixels = 115
-    DBCP = 20
-    dbcpTol = 2
+    DBCP = input("Insira o DBCP: ")
+    dbcpTol = input("Insira a tolerância: ")
 
     # Program Sequence
     initializeCapture(camera)
     inspectionMode(camera, 115)
-    #operate_wire(MB, camera, DBCP, dbcpTol)
+    operate_wire(MB, camera, DBCP, dbcpTol)
 
     print(cmInPixels)
     camera.close()
-#endProgram(camera)
+
 
 main()
 
