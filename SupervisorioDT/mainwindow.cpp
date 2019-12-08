@@ -15,6 +15,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionAbrir_Programa, SIGNAL(triggered()), this, SLOT(openFileAct()));
     connect(ui->actionSalvar_Programa, SIGNAL(triggered()), this, SLOT(saveFileAct()));
     connect(ui->actionSobre, SIGNAL(triggered()),this,SLOT(aboutSupervisorio()));
+
+    //Definição das velocidades máximas
+    ui->sbVelocidade->setMaximum(this->C_maxSpeed);
+    ui->sbVelocidadeJog->setMaximum(this->C_maxSpeed);
 }
 
 MainWindow::~MainWindow()
@@ -202,64 +206,92 @@ void MainWindow::on_btConfig_clicked()
 //Slot acionado sempre que exite um pacote TCP pronto para leitura.
 void MainWindow::onReadyRead()
 {
-    QJsonDocument recieverDocument = recieveJsonThroughSocket();
-    QJsonObject obj = recieverDocument.object();
-    QString keyValue = obj.value("mode").toString();
-    if(keyValue == "EXTESTOP")
+    if(!recievingImage)
     {
-        //Adicionar testes de valor, para reiniciar a máquina de estados do supervisório
-        bool tipo = obj.value("params").toInt();
-        if(tipo == true)
+        QJsonDocument recieverDocument = recieveJsonThroughSocket();
+        QJsonObject obj = recieverDocument.object();
+        QString keyValue = obj.value("mode").toString();
+        if(keyValue == "EXTESTOP")
         {
-            ui->warningLog->append("A parada de emergência externa foi acionada, favor checar integridade da célula");
-            changeWindowState(EXTESTOP);
+            //Adicionar testes de valor, para reiniciar a máquina de estados do supervisório
+            bool tipo = obj.value("params").toInt();
+            if(tipo == true)
+            {
+                ui->warningLog->append("A parada de emergência externa foi acionada, favor checar integridade da célula");
+                changeWindowState(EXTESTOP);
+            }
+            else
+            {
+                changeWindowState(CONNECTED_STANDBY);
+                homed = false;
+                homing = false;
+                turnedOn = false;
+                programActive = false;
+                programExec = false;
+                taskExec = false;
+                inspection = false;
+                changeWindowStatus();
+            }
         }
-        else
+        else if(keyValue == "STATUS")
         {
-            changeWindowState(CONNECTED_STANDBY);
-            homed = false;
-            homing = false;
-            turnedOn = false;
-            programActive = false;
-            programExec = false;
-            taskExec = false;
-            inspection = false;
+            QJsonArray arr = obj.value("params").toArray();
+            homed = arr.at(0).toInt();
+            homing = arr.at(1).toInt();
+            turnedOn = arr.at(2).toInt();
+            programActive = arr.at(3).toInt();
+            programExec = arr.at(4).toInt();
+            taskExec = arr.at(5).toInt();
+            inspection = arr.at(6).toInt();
             changeWindowStatus();
         }
-    }
-    else if(keyValue == "STATUS")
-    {
-        QJsonArray arr = obj.value("params").toArray();
-        homed = arr.at(0).toInt();
-        homing = arr.at(1).toInt();
-        turnedOn = arr.at(2).toInt();
-        programActive = arr.at(3).toInt();
-        programExec = arr.at(4).toInt();
-        taskExec = arr.at(5).toInt();
-        inspection = arr.at(6).toInt();
-        changeWindowStatus();
-    }
-    else if(keyValue == "INSPECTION")
-    {
-        int param = obj.value("params").toInt();
-        if(param == 1)
+        else if(keyValue == "INSPECTION")
         {
-            ui->warningLog->append("Calibração terminada");
+            int param = obj.value("params").toInt();
+            if(param == 1)
+            {
+                ui->warningLog->append("Calibração terminada");
+            }
+            if(param == -1)
+            {
+                ui->warningLog->append("Erro de calibração");
+            }
         }
-        if(param == -1)
+        else if(keyValue == "PROGRAM")
         {
-            ui->warningLog->append("Erro de calibração");
+            if(this->stateNow == PROG)
+            {
+                ui->warningLog->append("Programa Recebido");
+                recieveJsonProgramFromBBB(obj);
+            }
+            else
+                ui->warningLog->append("O programa foi recebido, mas a interface deve estar em modo programa. Tente Novamente.");
+        }
+        else if(keyValue == "FRAME")
+        {
+            ui->warningLog->append("Frame chegou");
+            this->frameBufferSize = obj.value("params").toInt();
+            ui->warningLog->append(QString::number(frameBufferSize));
+            this->recievingImage = true;
         }
     }
-    else if(keyValue == "PROGRAM")
+    else
     {
-        if(this->stateNow == PROG)
+        this->dataBuffer = tcpSocket->read(frameBufferSize);
+        ui->cameraImage->clear();
+        QBuffer buffer(&dataBuffer);
+        buffer.open(QIODevice::ReadOnly);
+        QImageReader reader(&buffer, "jpg");
+        QImage image = reader.read();
+        if(image.isNull())
         {
-            ui->warningLog->append("Programa Recebido");
-            recieveJsonProgramFromBBB(obj);
+            ui->warningLog->append("Imagem invalida");
         }
         else
-            ui->warningLog->append("O programa foi recebido, mas a interface deve estar em modo programa. Tente Novamente.");
+            ui->cameraImage->setPixmap(QPixmap::fromImage(image));
+        recievingImage = false;
+        buffer.close();
+        this->dataBuffer.clear();
     }
 }
 
@@ -449,7 +481,6 @@ void MainWindow::on_btConnect_clicked(bool checked)
 {
    if(checked)
    {
-       /*
        tcpSocket->connectToHost(QHostAddress(beagleBoneIP), beagleBonePort);
        if(tcpSocket->waitForConnected(5000))
        {
@@ -464,7 +495,7 @@ void MainWindow::on_btConnect_clicked(bool checked)
            ui->warningLog->append("Conexão indisponível");
            ui->btConnect->setChecked(false);
            return;
-       }*/
+       }
        this->connectionState = true;
        this->stateNow = CONNECTED_STANDBY;
        ui->stateConnected->setText("SIM");
@@ -701,6 +732,7 @@ void MainWindow::on_btAlterar_clicked()
        return;
 }
 
+//==========================================CheckBox Handlers=========================
 
 void MainWindow::on_cbFimOp_clicked(bool checked)
 {
@@ -724,6 +756,40 @@ void MainWindow::on_cbInspecaoJog_toggled(bool checked)
 {
     if(checked)
         ui->cbFimOpJog->setChecked(false);
+}
+
+
+void MainWindow::on_cbLinear_clicked(bool checked)
+{
+    if(checked)
+        ui->cbJunta->setChecked(false);
+    else
+        ui->cbJunta->setChecked(true);
+}
+
+
+void MainWindow::on_cbJunta_clicked(bool checked)
+{
+    if(checked)
+        ui->cbLinear->setChecked(false);
+    else
+        ui->cbLinear->setChecked(true);
+}
+
+void MainWindow::on_cbLinearJog_clicked(bool checked)
+{
+    if(checked)
+        ui->cbJuntaJog->setChecked(false);
+    else
+        ui->cbJuntaJog->setChecked(true);
+}
+
+void MainWindow::on_cbJuntaJog_clicked(bool checked)
+{
+    if(checked)
+        ui->cbLinearJog->setChecked(false);
+    else
+        ui->cbLinearJog->setChecked(true);
 }
 
 //=============================================PROGRAM CONTROL==============================
@@ -773,6 +839,73 @@ void MainWindow::on_btDeletar_clicked()
     {
         ui->warningLog->append("Não há programa ativo.");
     }
+}
+
+//=============================================FUNÇÕES PARA CINEMATICA======================
+
+double MainWindow::checkSpeeds(double B_ang, double C_ang, double veloc)
+{
+    this->B_lastPos=ui->programEditor->item(ui->programEditor->currentRow(),B_ANG)->text().toDouble();
+    this->C_lastPos=ui->programEditor->item(ui->programEditor->currentRow(),C_ANG)->text().toDouble();
+    double t_b = qAbs(B_ang - B_lastPos)/veloc;
+    double t_c = qAbs(C_ang - C_lastPos)/veloc;
+    if(t_b<=0 && t_c<=0)
+    {
+        ui->warningLog->append("Não há movimento, a velocidade é nula.");
+        return 0;
+    }
+    //Se não há deslocamento em B e há deslocamento em C testa a velocidade de C.
+    else if(t_b <= 0 && t_c >= 0)
+    {
+        if(veloc <= this->C_maxSpeed)
+            return veloc;
+        else
+        {
+            ui->warningLog->append("A velocidade desejada excede o limite do eixo. A velocidade máxima foi definida por padrão.");
+            return C_maxSpeed;
+        }
+    }
+    //Se não há deslocamento em C e há Deslocamento em B testa a velocidade em B
+    else if(t_c <= 0 && t_b >= 0)
+    {
+        if(veloc <= this->B_maxSpeed)
+            return veloc;
+        else
+        {
+            ui->warningLog->append("A velocidade desejada excede o limite do eixo. A velocidade máxima foi definida por padrão.");
+            return B_maxSpeed;
+        }
+    }
+    else
+    {
+        double largestTime = 0;
+        if(t_b >= t_c)
+            largestTime = t_b;
+        else
+            largestTime = t_c;
+        double actualSpeed_B = qAbs(B_ang - B_lastPos)/largestTime;
+        double actualSpeed_C = qAbs(C_ang - C_lastPos)/largestTime;
+        if(actualSpeed_B > B_maxSpeed && actualSpeed_C <= C_maxSpeed)
+        {
+            ui->warningLog->append("O movimento não pode ser linear, o eixo B se move acima da velocidade máxima");
+            ui->warningLog->append("Velocidade:" + QString::number(actualSpeed_B) + "graus/s");
+            return 0;
+        }
+        else if(actualSpeed_C > C_maxSpeed && actualSpeed_B <= B_maxSpeed)
+        {
+            ui->warningLog->append("O movimento não pode ser linear, o eixo C se move acima da velocidade máxima");
+            ui->warningLog->append("Velocidade:" + QString::number(actualSpeed_C) + "graus/s");
+            return 0;
+        }
+        else if(actualSpeed_B > B_maxSpeed && actualSpeed_C > C_maxSpeed)
+        {
+            ui->warningLog->append("O movimento não pode ser linear, os eixos B e C se movem acima das velocidades máximas");
+            ui->warningLog->append("Velocidade:" + QString::number(actualSpeed_B) + "graus/s");
+            ui->warningLog->append("Velocidade:" + QString::number(actualSpeed_C) + "graus/s");
+            return 0;
+        }
+    }
+    return veloc;
 }
 
 //=============================================PROGRAM EDITOR===============================
@@ -869,6 +1002,7 @@ void MainWindow::on_btAddTarefa_clicked()
     double veloc;
     bool fim_op;
     bool inspect;
+    double resultSpeed;
     if(this->stateNow == PROG)
     {
         B_Value = ui->sbBProg->value();
@@ -876,6 +1010,10 @@ void MainWindow::on_btAddTarefa_clicked()
         veloc = ui->sbVelocidade->value();
         fim_op = ui->cbFimOp->isChecked();
         inspect = ui->cbInspecao->isChecked();
+        if(ui->cbLinear->isChecked())
+            resultSpeed = checkSpeeds(B_Value,C_Value,veloc);
+        else
+            resultSpeed = veloc;
     }
     else if(this->stateNow == JOG && ui->cbTeach->isChecked())
     {
@@ -884,10 +1022,20 @@ void MainWindow::on_btAddTarefa_clicked()
         veloc = ui->sbVelocidadeJog->value();
         fim_op = ui->cbFimOpJog->isChecked();
         inspect = ui->cbInspecaoJog->isChecked();
+        if(ui->cbLinearJog->isChecked())
+            resultSpeed = checkSpeeds(B_Value,C_Value,veloc);
+        else
+            resultSpeed = veloc;
     }
     else
         return;
-    drawWidgetTable(B_Value,C_Value,veloc,fim_op,inspect);
+    if(resultSpeed <= 0)
+    {
+        ui->warningLog->append("Movimento inválido.");
+        return;
+    }
+    else
+        drawWidgetTable(B_Value,C_Value,resultSpeed,fim_op,inspect);
 }
 
 void MainWindow::on_btExcluir_clicked()
@@ -944,16 +1092,3 @@ QJsonObject MainWindow::loadWidgetTable()
     return senderObject;
 }
 
-
-//Mocks (debug)
-
-void MainWindow::on_homeMck_clicked()
-{
-    this->homed = true;
-    this->homing = false;
-}
-
-void MainWindow::on_activePrgMck_clicked()
-{
-    this->programActive = true;
-}

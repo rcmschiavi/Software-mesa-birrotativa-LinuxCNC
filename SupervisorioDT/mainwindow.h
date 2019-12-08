@@ -31,6 +31,8 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QCloseEvent>
+#include <QImageReader>
+#include <QBuffer>
 #include "connectionprompt.h"
 
 
@@ -78,23 +80,32 @@ private slots:
     //STATE MACHINE
     void changeWindowStatus();
     void changeWindowState(int state);
+    void on_btExtEstop_clicked();
     void on_btConnect_clicked(bool checked);
     void on_btLiga_clicked(bool checked);
-    void on_btProgramar_clicked(bool checked);
     void on_btEstop_clicked(bool checked);
+    void on_btProgramar_clicked(bool checked);
     void on_btJogging_clicked(bool checked);
     void on_btAuto_clicked(bool checked);
 
     //Comandos Diretos para BBB
+    //Movimento
     void on_btHome_clicked(bool checked);
     void on_btGO_clicked();
+    //Programa
     void on_btCarregar_clicked();
+    void on_btReceber_clicked();
+    void on_btDeletar_clicked();
     void on_btCycStart_clicked();
+    //Inspeção
     void on_btAtualizar_clicked();
     void on_btAlterar_clicked();
 
     //Funções do Warning Log
     void on_btClearLog_clicked();
+
+    //Funções de cinemática
+    double checkSpeeds(double B_ang, double C_ang, double veloc);
 
     //Funções do editor de programa
     void on_btAddTarefa_clicked();
@@ -103,21 +114,19 @@ private slots:
     void drawWidgetTable(double B_ang, double C_ang, double veloc, bool fim_op, bool inspect);
     QJsonObject loadWidgetTable();
     void clearWidgetTable();
-    //Handler de parâmetros do editor de programa
+
+    //Handler para parâmetros do editor de programa
     void on_cbFimOp_clicked(bool checked);
     void on_cbInspecao_clicked(bool checked);
     void on_cbFimOpJog_clicked(bool checked);
     void on_cbInspecaoJog_toggled(bool checked);
 
-    //Mocks (debug)
-    void on_homeMck_clicked();
-    void on_activePrgMck_clicked();
+    void on_cbLinear_clicked(bool checked);
+    void on_cbJunta_clicked(bool checked);
 
-    void on_btReceber_clicked();
+    void on_cbLinearJog_clicked(bool checked);
 
-    void on_btDeletar_clicked();
-
-    void on_btExtEstop_clicked();
+    void on_cbJuntaJog_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
@@ -131,6 +140,13 @@ private:
     bool taskExec = false;
     bool inspection = false;
 
+    //BBB Params
+    //Speed deg per sec
+    double B_maxSpeed=3;
+    double C_maxSpeed=15;
+    double B_lastPos=0;
+    double C_lastPos=0;
+
     //State Machine GUI
     int stateNow = STANDBY;
     int stateOld = READY;
@@ -142,6 +158,8 @@ private:
     int beagleBonePort = 10000;
     QTcpSocket* tcpSocket;
     QByteArray dataBuffer;
+    int frameBufferSize=0;
+    bool recievingImage=false;
 
     //Program Editor Variables
     int editorLinePointer = 0;
