@@ -1,10 +1,6 @@
-Arquivos de inspeção do sistema de visão para controle de arame.
-
 ### Procedimento para configurar a BBB para realizar a captura 
 
 Existem alguns problemas com taxa de transferência usb da BBB e fica lento capturar a imagem pelo formato padrão YUYV, com isso ocorrem erros de timeout(select timeout) e não é possível capturar a imagem. Para resolver o problema é necessário utilizar alguns pacotes que possibilitam a leitura com conversões que aceleram a captura e transmissão usb. 
-
-O código simples para a execução de captura de um frame é: Teste_webcam_BBB.py
 
 - Instalar 4l2-ctl via apt-get - referências: http://derekmolloy.ie/beaglebone-images-video-and-opencv/
 
@@ -12,7 +8,6 @@ O código simples para a execução de captura de um frame é: Teste_webcam_BBB.
 
 - Instalar a biblioteca de python v4l2capture-l2 (https://github.com/gebart/python-v4l2capture) para controlar os parametros da câmera via python. É necessário que seja essa, pois ela realiza a conversão para MJPG, a disponível no pip install não funcionou, talvez futuramente corrijam o bug 
 
-- Códigos utilizados como exemplo:
-    - https://github.com/gebart/python-v4l2capture/blob/master/capture_video.py
+- Utilizei esses códigos como exemplo:
     - https://gist.github.com/royshil/0f674c96281b686a9a62
-
+    - https://github.com/gebart/python-v4l2capture/blob/master/capture_video.py

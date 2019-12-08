@@ -1,11 +1,7 @@
 # coding=utf-8
-import cv2 as cv
-import numpy as np
-import modbus
-import os
-
 
 # Author: Lucas Costa Ferreira
+# Fixes e implementação BBB: Rodolfo Cavour Moretti Schiavi
 # Project: Projeto Integrador VI
 # Sistema de Inspeção de Arame
 # Informações importantes:
@@ -13,6 +9,17 @@ import os
 # O DebugMode deve ser ativado apenas para Calibração fina nos filtros de imagem ou testes sem câmera.
 #
 #Módulo não padronizado devido a incompatibilidade e inconsistências
+#
+#Foram necessárias algumas modificações para funcionar na BBB, o readMe tem informações para resolução de problema
+
+
+import cv2 as cv
+import numpy as np
+import v4l2capture
+#import modbus
+import os
+import numpy as np
+import select
 
 def returnLargestContour(contours):
     biggestArea = 0
@@ -46,43 +53,39 @@ def getWireLengthFromImage(cameraFrame, cmInPixels):
 
 def initializeCapture(camera):
 
-    isValidFrame, preCameraFrame = camera.read()
-    rows, cols = preCameraFrame.shape[:2]
-    M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
-    cameraFrame = cv.warpAffine(preCameraFrame, M, (cols, rows))
-    if not isValidFrame:
-        print("Frame failure")
-        return -1
-    frameHeight, frameWidth = cameraFrame.shape[:2]
-    return frameWidth, frameHeight
-
-def inspectionMode( camera, cmInPixels):
-
-    isValidFrame, preCameraFrame = camera.read()
-    rows, cols = preCameraFrame.shape[:2]
-    M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
-    cameraFrame = cv.warpAffine(preCameraFrame, M, (cols, rows))
-    if not isValidFrame:
-        print("Frame failure")
-        return -1
-    wireLengthMm, wire = getWireLengthFromImage(cameraFrame, cmInPixels)
-    try:
-        box = np.int0(cv.boxPoints(cv.minAreaRect(wire)))
-        processedImage = cameraFrame[60:420, 160:480]
-
-        cv.drawContours(processedImage, [box], 0, (0, 0, 255), 2)
-        file_name = os.path.dirname(__file__) + '/picture/pic.jpg'
-        cv.imwrite(file_name, processedImage)
-        print(wireLengthMm)
-    except:
-        print("Contorno Inválido")
-        wireLengthMm = 0
-    cv.waitKey(1)
-    return wireLengthMm
+    size_x, size_y = camera.set_format(640, 480, fourcc='MJPG')
+    camera.create_buffers(1)
+    camera.queue_all_buffers()
+    camera.start()
 
 
-def endProgram(camera):
-    camera.release()
+def inspectionMode(camera, cmInPixels):
+    frame = None
+    # with open('video.mjpg', 'wb') as f:
+    while frame == None:
+        # Wait for the device to fill the buffer.
+        select.select((camera,), (), ())
+
+        # The rest is easy :-)
+        image_data = camera.read_and_queue()
+        frame = cv.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv.cv.CV_LOAD_IMAGE_COLOR)
+
+        wireLengthMm, wire = getWireLengthFromImage(frame, cmInPixels)
+        print wireLengthMm
+        #print wire
+        try:
+            #Não funciona na BBB
+            #box = np.int0(cv.cv.boxPoints(cv.minAreaRect(wire)))
+            processedImage = frame[60:420, 160:480]
+            #cv.drawContours(processedImage, [box], 0, (0, 0, 255), 2)
+            cv.imwrite("processed.jpg", processedImage)
+            print(wireLengthMm)
+        except Exception as e:
+            cv.imwrite("no_countourn.jpg", frame)
+            print("Contorno Inválido" + str(e))
+            wireLengthMm = 0
+        return wireLengthMm
+
 
 
 def operate_wire(MB, camera, DBCP, dbcpTol):
@@ -120,7 +123,7 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
 
 def main():
     #MB = modbus.Modbus()
-    camera = cv.VideoCapture(1)
+    camera = v4l2capture.Video_device("/dev/video8")
     cmInPixels = 115
     DBCP = 20
     dbcpTol = 2
@@ -131,6 +134,10 @@ def main():
     #operate_wire(MB, camera, DBCP, dbcpTol)
 
     print(cmInPixels)
-    endProgram(camera)
+    camera.close()
+#endProgram(camera)
 
 main()
+
+
+

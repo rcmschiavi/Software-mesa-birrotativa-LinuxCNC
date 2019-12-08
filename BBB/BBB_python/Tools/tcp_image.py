@@ -33,8 +33,6 @@ try:
     connection.sendall(str(data))
     connection.sendall(stringData)
 
-
-
 finally:
     "conexão fechada"
     connection.close()
