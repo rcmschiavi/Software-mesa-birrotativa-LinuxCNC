@@ -22,3 +22,5 @@ https://josetips.wordpress.com/2016/11/01/ubuntu-init-scripts-lsbinitscripts/
 https://wiki.debian.org/LSBInitScripts
 
 criei um acende_led no init.d
+
+Na pior das hipóteses https://stackoverflow.com/questions/3586106/perform-commands-over-ssh-with-python

@@ -7,7 +7,7 @@ Autores: Rodolfo Cavour Moretti Schiavi / Lucas Costa
 
 '''
 
-import Queue, json, os
+import Queue, json, os, time
 import jsonPatternArray
 import MACHINE_CONTROLL
 
@@ -44,17 +44,18 @@ class Main:
         self.rotHomeBwd = False
         self.bascHomeBwd = False
         #self.MB = modbus.Modbus()
-
+	time.sleep(2)
         self.cycle()
 
 
     def cycle(self):
-        self.qRec.put(json.dumps([{"modo": 1, "params": [0, 0, 1]}]))
+        #self.qRec.put(json.dumps([{"modo": 1, "params": [0, 0, 1]}]))
         while True:
             self.HOME_CYCLE()
             if self.bascHomedFine and self.rotHomedFine:
                 #Home finalizado
-                break
+                print("Home finalizado")
+		break
 
 
     def getMode(self):
@@ -251,15 +252,16 @@ class Main:
             self.HOME_AXIS(self.controller.axisBasc, "bwd")
         elif self.bascHomed and self.bascHomeBwd and not self.bascHomedFine:
             self.HOME_AXIS(self.controller.axisBasc, "fine")
-            self.controller.setAxisHome(1)
         #Home Rotação
         elif self.bascHomedFine and not self.rotHomed:
-            self.HOME_AXIS(self.controller.axisRot, "normal")
+            #print("Normal")
+	    self.HOME_AXIS(self.controller.axisRot, "normal")
         elif self.bascHomedFine and self.rotHomed and not self.rotHomeBwd:
-            self.HOME_AXIS(self.controller.axisRot, "bwd")
+            #print("BWD")
+	    self.HOME_AXIS(self.controller.axisRot, "bwd")
         elif self.bascHomedFine and self.rotHomed and self.rotHomeBwd and not self.rotHomedFine:
-            self.HOME_AXIS(self.controller.axisRot, "fine")
-            self.controller.setAxisHome(0)
+            #print("Fine")
+	    self.HOME_AXIS(self.controller.axisRot, "fine")
         #Home OK
         elif self.bascHomedFine and self.rotHomedFine:
             self.JPA.HOMING = 0
@@ -270,9 +272,11 @@ class Main:
 
     def HOME_AXIS(self, axis, mode):
         if mode == "normal":
+	    #print("Normal")
             #Envia o comando na primeira iteração e depois espera pelo acionamento do sensor.
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 #no modo normal não se sabe a posição atual da mesa logo é preciso testar.
+		#print("Not moving normal")
                 if axis.get("axisIndex") == 0:
                     pos = self.controller.getPosition()
                     if pos[0] > 0:
@@ -284,35 +288,41 @@ class Main:
                 self.homeCommand = True
             else:
                 if self.controller.readSensor(axis.get("axisIndex")):
-                    self.controller.stopAxis(axis.get("axisIndex"))
+                    print("Sensor lido normal")
+		    self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomed = True
                     else:
                         self.bascHomed = True
                     self.homeCommand = False
         elif mode == "bwd":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
+		#print ("Not moving BWD")
                 self.controller.setAxisPos(axis.get("axisIndex"), -axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
                 if not self.controller.readSensor(axis.get("axisIndex")):
-                    self.controller.stopAxis(axis.get("axisIndex"))
+                    print("Sensor lido BWD")
+		    self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomeBwd = True
                     else:
                         self.bascHomeBwd = True
                     self.homeCommand = False
         elif mode == "fine":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 self.controller.setAxisPos(axis.get("axisIndex"), axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
                 if self.controller.readSensor(axis.get("axisIndex")):
-                    self.controller.stopAxis(axis.get("axisIndex"))
+                    print("Sensor lido fine")
+		    self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomedFine = True
+                        self.controller.setAxisHome(0)
                     else:
                         self.bascHomedFine = True
+                        self.controller.setAxisHome(1)
                     self.homeCommand = False
 
     def writeProgram(self, program):

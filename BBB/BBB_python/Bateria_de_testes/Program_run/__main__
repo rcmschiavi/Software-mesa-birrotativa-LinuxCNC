@@ -1,16 +1,17 @@
 #!/usr/bin/python
 #coding: utf-8
 '''
-Código para testar a rotina de home separado na BBB
+Classe que realizará todo o fluxo principal do programa
 
 Autores: Rodolfo Cavour Moretti Schiavi / Lucas Costa
 
 '''
 
-import Queue, json, os
-import jsonPatternArray
-import MACHINE_CONTROLL
 
+import Queue, time, json, os
+import jsonPatternArray
+import modbus
+import MACHINE_CONTROLL
 
 class Main:
     def __init__(self):
@@ -21,10 +22,8 @@ class Main:
         self.controller = MACHINE_CONTROLL.Machine_control()
         #self.c = TCP.Th(self.qRec, self.qSend)
         #self.c.start()
-        #self.save_stat = TCP.save_status.Save_file()
-        #self.params = TCP.save_status.params()
         self.state = "STOPPED"
-        self.jog_buffer = []
+        self.jog_buffer = [[70,0,3],[70,-200,20]]
         self.activeProgram = []
         self.is_moving = False
 
@@ -43,39 +42,68 @@ class Main:
         self.rotHomedFine = False
         self.rotHomeBwd = False
         self.bascHomeBwd = False
-        #self.MB = modbus.Modbus()
 
+        self.inspection_params = []
+        self.MB = modbus.Modbus()
+        self.MB.writeESTOP(True)
+        #Tempo de inicialização
+        time.sleep(2)
         self.cycle()
 
-
     def cycle(self):
-        self.qRec.put(json.dumps([{"modo": 1, "params": [0, 0, 1]}]))
         while True:
             self.HOME_CYCLE()
             if self.bascHomedFine and self.rotHomedFine:
                 #Home finalizado
+                print("Home finalizado")
+                break
+        time.sleep(1)
+        while True:
+            self.EXEC_MOV()
+            if not len(self.jog_buffer):
+                # Jog finalizado
+                print("Jog finalizado")
                 break
 
+        self.activeProgram = self.readProgram()
+        time.sleep(1)
+        self.JPA.EXEC_PGR = 1
+        print(self.activeProgram[0][1])
+        while True:
+            self.EXEC_PROGRAM()
+            if not self.JPA.EXEC_PGR:
+                print("Programa finalizado")
+                break
 
     def getMode(self):
         if not self.qRec.empty():
-            data = json.loads(self.qRec.get())
-            if len(data[0])==3:
-                return [data[0]["mode"], data[0]["params"], data[0]["operation"]]
-            elif len(data[0])==2:
-                return [data[0]["mode"], data[0]["params"]]
+            data = self.qRec.get()
+            if data == "Conectado":
+                #Informação para desativar o ESTOP da BBB no CLP
+                return 1
+            elif data == "Desconectado":
+                #Informação para ativar o ESTOP da BBB no CLP
+                return -1
             else:
-                return None
+                data = json.loads(data)
+                if len(data[0])==3:
+                    return [data[0]["mode"], data[0]["params"], data[0]["operation"]]
+                elif len(data[0])==2:
+                    return [data[0]["mode"], data[0]["params"]]
+                else:
+                    return ["",""]
         else:
-            return None
+            return ["",""]
 
     def executa_estado(self, data):
+
         mode = data[0]
         params = data[1]
         P_ESTOP = self.MB.getP_ESTOP()
+
         if mode=="EXTESTOP":
             self.state = "EXETSTOP"
-            self.MB.writeESTOP()
+            self.MB.writeESTOP(False)
             return
         elif P_ESTOP:
             self.state = "EXTESTOP"
@@ -89,11 +117,14 @@ class Main:
             self.qSend.put(1, data) #Envia o status da que a parada de emergência foi desativada
             return
 
-        elif self.state=="STOPPED" and mode==None:
-            self.JPA.EXEC_PGR = 0
-            self.JPA.TASK_EXEC = 0
-            data = self.JPA.STATUS()
-            self.qSend.put(2, data)  # Envia o status
+        elif self.state=="STOPPED":
+            if mode=="INSPECTION":
+                self.inspection_params = [params[0],params[1],params[2]]
+            elif mode == "":
+                self.JPA.EXEC_PGR = 0
+                self.JPA.TASK_EXEC = 0
+                data = self.JPA.STATUS()
+                self.qSend.put(2, data)  # Envia o status
 
         elif mode == "HOME":
                 self.state = "HOMING"
@@ -105,7 +136,7 @@ class Main:
                 self.homeInit = False
 
         elif self.state=="HOMING":
-            #self.HOME_CYCLE()
+            self.HOME_CYCLE()
             if self.JPA.HOMED == 1:
                 self.JPA.HOMING = 0
                 data = self.JPA.STATUS()
@@ -243,7 +274,6 @@ class Main:
             self.rotHomeBwd = False
             self.bascHomeBwd = False
             self.homeInit = True
-
         #Home Bascula
         if not self.bascHomed:
             self.HOME_AXIS(self.controller.axisBasc, "normal")
@@ -251,7 +281,6 @@ class Main:
             self.HOME_AXIS(self.controller.axisBasc, "bwd")
         elif self.bascHomed and self.bascHomeBwd and not self.bascHomedFine:
             self.HOME_AXIS(self.controller.axisBasc, "fine")
-            self.controller.setAxisHome(1)
         #Home Rotação
         elif self.bascHomedFine and not self.rotHomed:
             self.HOME_AXIS(self.controller.axisRot, "normal")
@@ -259,7 +288,6 @@ class Main:
             self.HOME_AXIS(self.controller.axisRot, "bwd")
         elif self.bascHomedFine and self.rotHomed and self.rotHomeBwd and not self.rotHomedFine:
             self.HOME_AXIS(self.controller.axisRot, "fine")
-            self.controller.setAxisHome(0)
         #Home OK
         elif self.bascHomedFine and self.rotHomedFine:
             self.JPA.HOMING = 0
@@ -267,11 +295,10 @@ class Main:
             data = self.JPA.STATUS()
             self.qSend.put(2, data)
 
-
     def HOME_AXIS(self, axis, mode):
         if mode == "normal":
             #Envia o comando na primeira iteração e depois espera pelo acionamento do sensor.
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 #no modo normal não se sabe a posição atual da mesa logo é preciso testar.
                 if axis.get("axisIndex") == 0:
                     pos = self.controller.getPosition()
@@ -291,7 +318,7 @@ class Main:
                         self.bascHomed = True
                     self.homeCommand = False
         elif mode == "bwd":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 self.controller.setAxisPos(axis.get("axisIndex"), -axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
@@ -303,7 +330,7 @@ class Main:
                         self.bascHomeBwd = True
                     self.homeCommand = False
         elif mode == "fine":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 self.controller.setAxisPos(axis.get("axisIndex"), axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
@@ -311,8 +338,10 @@ class Main:
                     self.controller.stopAxis(axis.get("axisIndex"))
                     if axis.get("axisIndex") == 0:
                         self.rotHomedFine = True
+                        self.controller.setAxisHome(0)
                     else:
                         self.bascHomedFine = True
+                        self.controller.setAxisHome(1)
                     self.homeCommand = False
 
     def writeProgram(self, program):
@@ -331,9 +360,9 @@ class Main:
         if statinfo.st_size:
             with open(file_name, 'r') as outfile:
                 program = json.load(outfile)
-                program = json.dumps(program)
 
-        return str(program)
+
+        return program
 
     def checkProgram(self):
         file_name = os.path.dirname(__file__) + '/program/program.json'

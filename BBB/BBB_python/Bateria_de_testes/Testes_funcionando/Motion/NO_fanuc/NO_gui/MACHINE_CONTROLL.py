@@ -85,8 +85,9 @@ class Machine_control:
         pos_rot = self.h["get_position_rot"]
         return [pos_rot,pos_basc]
 
-    def setMachinePos(self,position_basc,position_rot, speed):
+    def setMachinePos(self,position_rot,position_basc, speed):
         speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
+        speed_reduction = 0
         if speed_rot>=self.maxvel_rot: speed_rot=self.maxvel_rot
 
         if speed_basc>=self.maxvel_basc: speed_basc=self.maxvel_basc
@@ -94,20 +95,30 @@ class Machine_control:
         self.setSpeed(speed_rot, speed_basc)
         self.h["set_position_basc"] = position_basc + self.HOME_POS_BASC
         self.h["set_position_rot"] = position_rot + self.HOME_POS_ROT
+	print (position_basc,self.HOME_POS_BASC,position_rot,self.HOME_POS_ROT)
         self.h["enable_basc"] = True
         self.h["enable_rot"] = True
         return
 
     def setAxisPos(self,axis,pos,speed):
         if axis==0:
+            print(pos,speed)
             hal.set_p("stepgen.0.maxvel", str(speed))
-            self.h["set_position_rot"] = pos
+	    self.h["set_position_rot"] = pos
             self.h["enable_rot"] = True
+	    #hal.set_p("stepgen.0.maxvel", str(speed)
+	    #self.setMachinePos(pos,self.h["get_position_basc"],speed)
         elif axis==1:
+	    print(pos,speed)
             hal.set_p("stepgen.1.maxvel", str(speed))
             self.h["set_position_basc"] = pos
-            self.h["enable_basc"] = True
-        return
+	    self.h["enable_basc"] = True 
+	    #self.h["set_position_basc"] = pos + self.HOME_POS_BASC
+            #self.setMachinePos(self.h["get_position_rot"],pos,speed)
+	    #hal.set_p("stepgen.1.maxvel", str(speed))
+        #self.h["enable_rot"] = True
+        #self.h["enable_basc"] = True
+	return
 
     def setAxisHome(self,axis):
         if axis==0:
@@ -118,30 +129,37 @@ class Machine_control:
 
 
     def stopAxis(self, axis):
-        if axis==self.ROT_AXIS:
+	if axis==self.ROT_AXIS:
             self.h["enable_rot"] = False
             self.h["set_position_rot"] = self.h["get_position_rot"]
+	    print(self.h["get_position_rot"])
         elif axis==self.BASC_AXIS:
             self.h["enable_basc"] = False
             self.h["set_position_basc"] = self.h["get_position_basc"]
+	    print(self.h["get_position_basc"],self.h["set_position_basc"])
         return
 
     def readSensor(self, sensor_number):
         if sensor_number==self.ROT_AXIS:
-            return self.h["sensor_rot"]
+            #t_i = time.time()
+            #while time.time()<t_i+0.025:
+            if not self.h["sensor_rot"]:
+                return False
+            #print("Sensor lido Rot")
+	    return True
         elif sensor_number==self.BASC_AXIS:
-            return self.h["sensor_basc"]
+            #t_i = time.time()
+            #while time.time()<t_i+0.025:
+            if not self.h["sensor_basc"]:
+                return False
+	    #print("Sensor Lido Basc") 
+            return True
         else:
             return None
 
     def isMoving(self):
         # Testa se a posição atual dos steps é igual a posição do count arredondado em 3 casas
-        if (round(self.h["get_position_basc"], 1) == self.h["set_position_basc"]) and (round(self.h["get_position_rot"], 1) == self.h["set_position_rot"]):
+        if (round(self.h["get_position_basc"], 3) == self.h["set_position_basc"]) and (round(self.h["get_position_rot"], 3) == self.h["set_position_rot"]):
             return False
         else:
             return True
-
-
-
-
-

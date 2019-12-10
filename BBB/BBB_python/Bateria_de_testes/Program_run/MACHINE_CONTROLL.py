@@ -135,11 +135,14 @@ class Machine_control:
             return None
 
     def isMoving(self):
+        machTol = 0.5
         # Testa se a posição atual dos steps é igual a posição do count arredondado em 3 casas
-        if (round(self.h["get_position_basc"], 1) == self.h["set_position_basc"]) and (round(self.h["get_position_rot"], 1) == self.h["set_position_rot"]):
-            return False
-        else:
+        if not ((float(self.h["get_position_basc"]) >= float(self.h["set_position_basc"]) - machTol) and (float(self.h["get_position_basc"]) <= float(self.h["set_position_basc"])+machTol)):
             return True
+        elif not ((float(self.h["get_position_rot"])>= float(self.h["set_position_rot"])-machTol) and (float(self.h["get_position_rot"])<=float(self.h["set_position_rot"])+machTol)):
+            return True
+        else:
+            return False
 
 
 

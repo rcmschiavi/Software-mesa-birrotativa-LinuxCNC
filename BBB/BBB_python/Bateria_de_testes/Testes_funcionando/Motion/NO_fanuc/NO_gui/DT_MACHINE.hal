@@ -4,7 +4,7 @@
 loadrt hal_bb_gpio output_pins=914,916,918,922 input_pins=815,817
 loadrt stepgen step_type=0,0 ctrl_type=p,p
 loadrt debounce
-loadusr -Wn machine_controll ~/DT_controller/__main__
+loadusr -Wn machine_controll ~/BATERIA_TESTES/Bateria_de_testes/Motion/NO_fanuc/NO_gui/jog
 loadrt threads name1=fast fp1=0 period1=50000 name2=slow period2=1000000
 
 
@@ -13,16 +13,15 @@ addf stepgen.update-freq slow
 addf stepgen.capture-position slow
 addf bb_gpio.write fast
 addf bb_gpio.read fast
+addf debounce.0.funct slow
 
 setp stepgen.0.position-scale 40.75
 setp stepgen.1.position-scale 300
-
-#A aceleração dos dois eixos é proporcional as suas respectivas velocidades maximas
+# mais ou menos 3 segundos para cada eixo alcançar velocidade máxima
 setp stepgen.0.maxaccel 67
 setp stepgen.1.maxaccel 8
 setp debounce.0.delay 25
 
-#Inverte a leitura dos sensores para melhor interpretacao
 setp bb_gpio.p8.in-15.invert TRUE
 setp bb_gpio.p8.in-17.invert TRUE
 
@@ -32,21 +31,19 @@ net pos_c stepgen.1.position-cmd <= machine_controll.set_position_basc
 net enable_b stepgen.0.enable <= machine_controll.enable_rot
 net enable_c stepgen.1.enable <= machine_controll.enable_basc
 
-#Conecta os sensores de fim de curso no debounce, para corrigir o problema de ruido dos drivers
 net sen_deb_b_in debounce.0.0.in <= bb_gpio.p8.in-15
 net sen_deb_c_in debounce.0.1.in <= bb_gpio.p8.in-17
 
-#Conecta o resultado dos sensores filtrados pelo componente debounce nos leitores de sensores
 net sen_deb_b debounce.0.0.out => machine_controll.sensor_rot
 net sen_deb_c debounce.0.1.out => machine_controll.sensor_basc
 
 net pos_b_now machine_controll.get_position_rot <= stepgen.0.position-fb
 net pos_c_now machine_controll.get_position_basc <= stepgen.1.position-fb
 
-#Conecta os pinos da BBB nos geradores de step
 net step_b bb_gpio.p9.out-14 <= stepgen.0.step
 net step_c bb_gpio.p9.out-18 <= stepgen.1.step
 net dir_b bb_gpio.p9.out-16 <= stepgen.0.dir
 net dir_c bb_gpio.p9.out-22 <= stepgen.1.dir
+
 
 start

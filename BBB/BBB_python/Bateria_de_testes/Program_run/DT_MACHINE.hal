@@ -4,7 +4,7 @@
 loadrt hal_bb_gpio output_pins=914,916,918,922 input_pins=815,817
 loadrt stepgen step_type=0,0 ctrl_type=p,p
 loadrt debounce
-loadusr -Wn machine_controll ~/DT_controller/__main__
+loadusr -Wn machine_controll ./__main__
 loadrt threads name1=fast fp1=0 period1=50000 name2=slow period2=1000000
 
 
@@ -13,6 +13,7 @@ addf stepgen.update-freq slow
 addf stepgen.capture-position slow
 addf bb_gpio.write fast
 addf bb_gpio.read fast
+addf debounce.0.funct slow
 
 setp stepgen.0.position-scale 40.75
 setp stepgen.1.position-scale 300
@@ -21,6 +22,7 @@ setp stepgen.1.position-scale 300
 setp stepgen.0.maxaccel 67
 setp stepgen.1.maxaccel 8
 setp debounce.0.delay 25
+
 
 #Inverte a leitura dos sensores para melhor interpretacao
 setp bb_gpio.p8.in-15.invert TRUE

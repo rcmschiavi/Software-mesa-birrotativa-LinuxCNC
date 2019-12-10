@@ -282,7 +282,7 @@ class Main:
     def HOME_AXIS(self, axis, mode):
         if mode == "normal":
             #Envia o comando na primeira iteração e depois espera pelo acionamento do sensor.
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 #no modo normal não se sabe a posição atual da mesa logo é preciso testar.
                 if axis.get("axisIndex") == 0:
                     pos = self.controller.getPosition()
@@ -302,7 +302,7 @@ class Main:
                         self.bascHomed = True
                     self.homeCommand = False
         elif mode == "bwd":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 self.controller.setAxisPos(axis.get("axisIndex"), -axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
@@ -314,7 +314,7 @@ class Main:
                         self.bascHomeBwd = True
                     self.homeCommand = False
         elif mode == "fine":
-            if not self.homeCommand and not self.controller.isMoving():
+            if not self.homeCommand:
                 self.controller.setAxisPos(axis.get("axisIndex"), axis.get("homePos"), axis.get("homeSpeedFine"))
                 self.homeCommand = True
             else:
@@ -344,9 +344,9 @@ class Main:
         if statinfo.st_size:
             with open(file_name, 'r') as outfile:
                 program = json.load(outfile)
-                program = json.dumps(program)
 
-        return str(program)
+
+        return program
 
     def checkProgram(self):
         file_name = os.path.dirname(__file__) + '/program/program.json'
