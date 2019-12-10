@@ -68,7 +68,10 @@ def inspectionMode(camera, cmInPixels):
         # The rest is easy :-)
         image_data = camera.read_and_queue()
         frame = cv.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv.cv.CV_LOAD_IMAGE_COLOR)
-
+        rows, cols = frame.shape[:2]
+        #rotação vai aqui
+        M = cv.getRotationMatrix2D((cols/2, rows/2),90,1)
+        frame = cv.warpAffine(frame, M, (cols,rows))
         wireLengthMm, wire = getWireLengthFromImage(frame, cmInPixels)
         print wireLengthMm
         try:
@@ -133,6 +136,7 @@ def main():
 
     print(cmInPixels)
     camera.close()
+    MB.closeConection()
 
 
 main()

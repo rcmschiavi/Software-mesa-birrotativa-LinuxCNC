@@ -4,6 +4,9 @@ escala da mesa báscula: 300
 máxima velocidade rotação: 25
 máxima velocidade báscula 3
 
+máxima aceleração rotação 67
+máxima aceleração bascula 8
+
 Movimentação:
 
 Basc => (+ afasta do home, - aproxima do home)

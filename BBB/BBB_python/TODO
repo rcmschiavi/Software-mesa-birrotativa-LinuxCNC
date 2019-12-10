@@ -1,0 +1,6 @@
+- Laço para buscar qual o endereço da webcam
+- Corrigir envio de listas para o CLP via modbus, funções não está enviando decimal, mas lista de bool
+- Corrigir a lógica do ESTOP do BBB para o CLP que Inicializado em false e a BBB tem que mandar True para ligar o painel só após
+conectar no tcp
+- Parada de emergência na inspeção
+-

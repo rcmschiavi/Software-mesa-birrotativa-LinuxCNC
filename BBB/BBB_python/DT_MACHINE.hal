@@ -11,12 +11,16 @@ addf stepgen.make-pulses fast
 addf stepgen.update-freq slow
 addf stepgen.capture-position slow
 addf bb_gpio.write fast
+addf bb_gpio.read fast
 
 setp stepgen.0.position-scale 40.75
 setp stepgen.1.position-scale 300
 # mais ou menos 3 segundos para cada eixo alcançar velocidade máxima
-setp stepgen.0.maxaccel 8
-setp stepgen.1.maxaccel 1
+setp stepgen.0.maxaccel 67
+setp stepgen.1.maxaccel 8
+
+setp bb_gpio.p8.in-15.invert TRUE
+setp bb_gpio.p8.in-17.invert TRUE
 
 net pos_b stepgen.0.position-cmd <= machine_controll.set_position_rot
 net pos_c stepgen.1.position-cmd <= machine_controll.set_position_basc
@@ -24,8 +28,8 @@ net pos_c stepgen.1.position-cmd <= machine_controll.set_position_basc
 net enable_b stepgen.0.enable <= machine_controll.enable_rot
 net enable_c stepgen.1.enable <= machine_controll.enable_basc
 
-net sensor_b machine_controll.sensor_basc <= bb_gpio.p8.in-15
-net sensor_c machine_controll.sensor_rot <= bb_gpio.p8.in-17
+net sensor_b machine_controll.sensor_rot <= bb_gpio.p8.in-15
+net sensor_c machine_controll.sensor_basc <= bb_gpio.p8.in-17
 
 net pos_b_now machine_controll.get_position_rot <= stepgen.0.position-fb
 net pos_c_now machine_controll.get_position_basc <= stepgen.1.position-fb

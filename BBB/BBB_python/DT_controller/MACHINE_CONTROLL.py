@@ -77,8 +77,8 @@ class Machine_control:
 
 
     def setSpeed(self, speed_rot, speed_basc):
-        hal.set_p("stepgen.0.maxvel", str(speed_basc)) #Precisa ser uma string
-        hal.set_p("stepgen.1.maxvel", str(speed_rot))
+        hal.set_p("stepgen.0.maxvel", str(speed_rot)) #Precisa ser uma string
+        hal.set_p("stepgen.1.maxvel", str(speed_basc))
 
     def getPosition(self):
         pos_basc = self.h["get_position_basc"]
@@ -88,7 +88,7 @@ class Machine_control:
     def setMachinePos(self,position_rot,position_basc, speed):
         speed_rot, speed_basc = self.calcSpeed(speed, position_basc,position_rot)
         speed_reduction = 0
-        if speed_rot>=self.maxvel_rot: speed_basc=self.maxvel_basc
+        if speed_rot>=self.maxvel_rot: speed_rot=self.maxvel_rot
 
         if speed_basc>=self.maxvel_basc: speed_basc=self.maxvel_basc
 
@@ -103,9 +103,11 @@ class Machine_control:
         if axis==0:
             self.h["set_position_rot"] = pos + self.HOME_POS_ROT
             hal.set_p("stepgen.0.maxvel", str(speed))
+            self.h["enable_rot"] = True
         elif axis==1:
             self.h["set_position_basc"] = pos + self.HOME_POS_BASC
             hal.set_p("stepgen.1.maxvel", str(speed))
+            self.h["enable_basc"] = True
         return
 
     def setAxisHome(self,axis):
@@ -127,18 +129,28 @@ class Machine_control:
 
     def readSensor(self, sensor_number):
         if sensor_number==self.ROT_AXIS:
-            return self.h["sensor_rot"]
+            t_i = time.time()
+            while time.time()<t_i+0.1:
+                if not self.h["sensor_rot"]:
+                    return False
+            return True
         elif sensor_number==self.BASC_AXIS:
-            return self.h["sensor_basc"]
+            t_i = time.time()
+            while time.time()<t_i+0.1:
+                if not self.h["sensor_basc"]:
+                    return False
+            return True
         else:
             return None
 
     def isMoving(self):
         # Testa se a posição atual dos steps é igual a posição do count arredondado em 3 casas
-        if round(self.h["get_position_rot"], 3) == self.h["set_position_rot"] and round(self.h["get_position_rot"],3) == self.h["set_position_rot"]:
+        if (round(self.h["get_position_basc"], 3) == self.h["set_position_basc"]) and (round(self.h["get_position_rot"], 3) == self.h["set_position_rot"]):
             return False
         else:
             return True
+
+
 
 
 

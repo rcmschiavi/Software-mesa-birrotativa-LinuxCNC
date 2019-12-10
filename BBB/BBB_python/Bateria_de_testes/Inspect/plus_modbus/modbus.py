@@ -182,3 +182,6 @@ class Modbus:
     def closeConection(self):
         self.c.close()
 
+MB = Modbus()
+
+MB.writeActivateInspect()

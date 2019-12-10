@@ -18,7 +18,7 @@ import v4l2capture
 import modbus
 import os
 import numpy as np
-import select
+import select, time
 
 def returnLargestContour(contours):
     biggestArea = 0
@@ -60,40 +60,40 @@ def initializeCapture(camera):
 
 def inspectionMode(camera, cmInPixels):
     frame = None
-    # with open('video.mjpg', 'wb') as f:
-    while frame == None:
-        # Wait for the device to fill the buffer.
-        select.select((camera,), (), ())
 
-        # The rest is easy :-)
+    while frame == None:
+
+        select.select((camera,), (), ())
         image_data = camera.read_and_queue()
         frame = cv.imdecode(np.frombuffer(image_data, dtype=np.uint8), cv.cv.CV_LOAD_IMAGE_COLOR)
-
+        rows, cols = frame.shape[:2]
+        M = cv.getRotationMatrix2D((cols / 2, rows / 2), 90, 1)
+        frame = cv.warpAffine(frame, M, (cols, rows))
         wireLengthMm, wire = getWireLengthFromImage(frame, cmInPixels)
+
         print wireLengthMm
-        #print wire
         try:
-            #Não funciona na BBB
-            #box = np.int0(cv.cv.boxPoints(cv.minAreaRect(wire)))
             processedImage = frame[60:420, 160:480]
-            #cv.drawContours(processedImage, [box], 0, (0, 0, 255), 2)
             cv.imwrite("processed.jpg", processedImage)
             print(wireLengthMm)
         except Exception as e:
-            cv.imwrite("no_countourn.jpg", frame)
             print("Contorno Inválido" + str(e))
             wireLengthMm = 0
         return wireLengthMm
 
-
-
-def operate_wire(MB, camera, DBCP, dbcpTol):
+def operate_wire(MB, camera, DBCP, dbcpTol,time_trying):
     MB.writeActivateInspect()
     avanco = False
     add_fwrd = 0
     MB.setTimer(125)
     MB.writeFwdWire()
+    t_i = time.time()
+
     while True:
+        if time.time()<t_i+60*time_trying:
+            # Tenta ajustar o arame durante n minutos indicados pelo default
+            MB.writeDeactivateInspect()
+            return 0
 
         wireLengthMm = inspectionMode(camera, 115)
         error = DBCP - wireLengthMm
@@ -103,12 +103,11 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
             #Envia mesa_end_op = True e depois reseta depois de 100ms
             print "Inspeçao finalizada"
             MB.writeDeactivateInspect()
-            return True
+            return 1
         else:
             if error<0:
                 print "Recua"
                 value =150 #Função que resulta o tempo de recuo para um determinado erro
-
                 MB.setTimer(value)
                 MB.writeBackWire()
                 avanco = False
@@ -120,23 +119,29 @@ def operate_wire(MB, camera, DBCP, dbcpTol):
 
 
 
-def main():
-    #MB = modbus.Modbus()
-    camera = v4l2capture.Video_device("/dev/video8")
-    cmInPixels = 115
-    DBCP = 20
-    dbcpTol = 2
+def main(MB,cmInPixels,DBCP,dbcpTol,time_trying):
+    ''' O retorno dessa função indica o que ocorreu
+    -1: Câmera não encontrada
+    0: Não foi possível ajustar o comprimento do arame com os valores recebidos
+    1: Arame ajustado como esperado
+    '''
+    #Verificação do endereço da camera
+    for i in range(10):
+        try:
+            camera = v4l2capture.Video_device("/dev/video{}".format(i))
+            break
+        except:
+            pass
+
+    if camera == None:
+        # Se nenhuma câmera for encontrada, retorna -1
+        return -1
 
     # Program Sequence
     initializeCapture(camera)
-    inspectionMode(camera, 115)
-    #operate_wire(MB, camera, DBCP, dbcpTol)
-
-    print(cmInPixels)
+    inspectionMode(camera, cmInPixels)
+    result = operate_wire(MB, camera, DBCP, dbcpTol, time_trying)
     camera.close()
-#endProgram(camera)
 
-main()
-
-
+    return result
 
