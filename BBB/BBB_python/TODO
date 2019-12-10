@@ -2,7 +2,7 @@
 Últimas coisas:
 
 
-Criar a inicialização do software na BBB:
+Criar a inicialização do software no startup BBB:
 
 
 Create /etc/init/myjob.conf
@@ -16,3 +16,9 @@ task
 exec /path/to/my/script.sh
 
 mais: https://askubuntu.com/questions/228304/how-do-i-run-a-script-at-start-up
+
+https://josetips.wordpress.com/2016/11/01/ubuntu-init-scripts-lsbinitscripts/
+
+https://wiki.debian.org/LSBInitScripts
+
+criei um acende_led no init.d
