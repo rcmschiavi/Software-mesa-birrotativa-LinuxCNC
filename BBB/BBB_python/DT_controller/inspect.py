@@ -18,7 +18,7 @@ import v4l2capture
 import modbus
 import os
 import numpy as np
-import select, time
+import select, time, json
 
 def returnLargestContour(contours):
     biggestArea = 0
@@ -58,10 +58,15 @@ def initializeCapture(camera):
     camera.start()
 
 
-def inspectionMode(camera, cmInPixels):
+def inspectionMode(camera, cmInPixels, MB, qRec):
     frame = None
 
     while frame == None:
+        if not qRec.empty():
+            data = qRec.get()
+            data = json.loads(data)
+            if data[0]["mode"]=="EXTESTOP":
+                MB.writeESTOP(False)
 
         select.select((camera,), (), ())
         image_data = camera.read_and_queue()
@@ -81,10 +86,9 @@ def inspectionMode(camera, cmInPixels):
             wireLengthMm = 0
         return wireLengthMm
 
-def operate_wire(MB, camera, DBCP, dbcpTol,time_trying):
+def operate_wire(MB, camera, DBCP, dbcpTol,time_trying, qRec):
     MB.writeActivateInspect()
     avanco = False
-    add_fwrd = 0
     MB.setTimer(125)
     MB.writeFwdWire()
     t_i = time.time()
@@ -94,6 +98,12 @@ def operate_wire(MB, camera, DBCP, dbcpTol,time_trying):
             # Tenta ajustar o arame durante n minutos indicados pelo default
             MB.writeDeactivateInspect()
             return 0
+
+        if not qRec.empty():
+            data = qRec.get()
+            data = json.loads(data)
+            if data[0]["mode"]=="EXTESTOP":
+                MB.writeESTOP(False)
 
         wireLengthMm = inspectionMode(camera, 115)
         error = DBCP - wireLengthMm
@@ -119,13 +129,13 @@ def operate_wire(MB, camera, DBCP, dbcpTol,time_trying):
 
 
 
-def main(MB,cmInPixels,DBCP,dbcpTol,time_trying):
+def main(MB,cmInPixels,DBCP,dbcpTol,time_trying,qRec):
     ''' O retorno dessa função indica o que ocorreu
     -1: Câmera não encontrada
     0: Não foi possível ajustar o comprimento do arame com os valores recebidos
     1: Arame ajustado como esperado
     '''
-    #Verificação do endereço da camera
+    #Verificação 10 endereços da camera
     for i in range(10):
         try:
             camera = v4l2capture.Video_device("/dev/video{}".format(i))
@@ -139,8 +149,8 @@ def main(MB,cmInPixels,DBCP,dbcpTol,time_trying):
 
     # Program Sequence
     initializeCapture(camera)
-    inspectionMode(camera, cmInPixels)
-    result = operate_wire(MB, camera, DBCP, dbcpTol, time_trying)
+    inspectionMode(camera,cmInPixels, MB, qRec)
+    result = operate_wire(MB,camera,DBCP,dbcpTol,time_trying,qRec)
     camera.close()
 
     return result

@@ -11,7 +11,10 @@ import socket
 import time, json, os
 class Connection:
 
+
+
     def __init__(self, qRec, qSend):
+
         self.cur_path = os.path.dirname(__file__)
         self.qRec = qRec
         self.qSend = qSend
@@ -39,16 +42,15 @@ class Connection:
             self.wait_message()
             time.sleep(0.1)
             self.connection.close()
+            self.qRec.put("Desconectado")
             time.sleep(0.1)
-            key = input("Digite 'x' para sair")
-            if key=='x':
-                break
-        print "Fim da conexão"
+
 
 
     def wait_connection(self):
         print "Conectando"
         self.connection, self.client_address = self.sock.accept()
+        self.qRec.put("Conectado")
         self.connection.settimeout(self.callback_latency)
         print ("Conectado à: "+  str(self.client_address))
 

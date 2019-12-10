@@ -11,6 +11,7 @@ import Queue, time, json, os
 import jsonPatternArray
 import modbus
 import MACHINE_CONTROLL
+import inspect
 
 
 class Main:
@@ -43,34 +44,49 @@ class Main:
         self.rotHomeBwd = False
         self.bascHomeBwd = False
 
+        self.inspection_params = []
         self.MB = modbus.Modbus()
         self.cycle()
 
-
     def cycle(self):
-
         while True:
-            self.executa_estado(self.getMode())
+            data = self.getMode()
+            if data == 1:
+                self.MB.writeESTOP(True)
+            elif data == -1:
+                self.MB.writeESTOP(False)
+            else:
+                self.executa_estado(data)
 
     def getMode(self):
         if not self.qRec.empty():
-            data = json.loads(self.qRec.get())
-            if len(data[0])==3:
-                return [data[0]["mode"], data[0]["params"], data[0]["operation"]]
-            elif len(data[0])==2:
-                return [data[0]["mode"], data[0]["params"]]
+            data = self.qRec.get()
+            if data == "Conectado":
+                #Informação para desativar o ESTOP da BBB no CLP
+                return 1
+            elif data == "Desconectado":
+                #Informação para ativar o ESTOP da BBB no CLP
+                return -1
             else:
-                return ["",""]
+                data = json.loads(data)
+                if len(data[0])==3:
+                    return [data[0]["mode"], data[0]["params"], data[0]["operation"]]
+                elif len(data[0])==2:
+                    return [data[0]["mode"], data[0]["params"]]
+                else:
+                    return ["",""]
         else:
             return ["",""]
 
     def executa_estado(self, data):
+
         mode = data[0]
         params = data[1]
         P_ESTOP = self.MB.getP_ESTOP()
+
         if mode=="EXTESTOP":
             self.state = "EXETSTOP"
-            self.MB.writeESTOP()
+            self.MB.writeESTOP(False)
             return
         elif P_ESTOP:
             self.state = "EXTESTOP"
@@ -84,11 +100,15 @@ class Main:
             self.qSend.put(1, data) #Envia o status da que a parada de emergência foi desativada
             return
 
-        elif self.state=="STOPPED" and mode==None:
-            self.JPA.EXEC_PGR = 0
-            self.JPA.TASK_EXEC = 0
-            data = self.JPA.STATUS()
-            self.qSend.put(2, data)  # Envia o status
+        elif self.state=="STOPPED":
+            if mode=="INSPECTION":
+                inspect.main(self.MB,cmInPixels=params[2],DBCP=params[0],dbcpTol=params[1],time_trying=5,qRec=self.qRec)
+                self.inspection_params[params[0],params[1],params[2]]
+            elif mode == "":
+                self.JPA.EXEC_PGR = 0
+                self.JPA.TASK_EXEC = 0
+                data = self.JPA.STATUS()
+                self.qSend.put(2, data)  # Envia o status
 
         elif mode == "HOME":
                 self.state = "HOMING"

@@ -147,18 +147,20 @@ class Modbus:
         result = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         return result
 
-    def writeESTOP(self):
+    def writeESTOP(self, status):
 
         CELL_CONTROL = self.readCell_control()
-        CELL_CONTROL[self.ADDR_BBB_ESTOP] = True
-        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, CELL_CONTROL)
+        CELL_CONTROL[self.ADDR_BBB_ESTOP] = status
+        value = self.boolLstToDecimal(CELL_CONTROL)
+        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         return op_succeed
 
     def writeMesaEndOP(self):
 
         CELL_CONTROL = self.readCell_control()
         CELL_CONTROL[self.ADDR_MESA_END_OP] = True
-        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, CELL_CONTROL)
+        value = self.boolLstToDecimal(CELL_CONTROL)
+        op_succeed = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         return op_succeed
 
     def getP_ESTOP(self):
@@ -177,7 +179,6 @@ class Modbus:
         self.c.port(self.port)
         self.c.open()
         print "Conexão aberta"
-
 
     def closeConection(self):
         self.c.close()

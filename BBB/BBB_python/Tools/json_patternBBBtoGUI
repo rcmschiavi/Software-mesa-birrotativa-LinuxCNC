@@ -5,10 +5,8 @@
   },
   {
     //Array de booleanas, homed,homing,turnedon,activePrg,execPrg,taskExec,inspect
-    //Posicao array de float.
     "mode": "STATUS",
-    "params": [0,0,0,0,0,0,0],
-    "pos": [20.4,15.2]
+    "params": [0,0,0,0,0,0,0]
   },
   {
     //Recebe programa carregado na BBB
@@ -19,6 +17,11 @@
     //Array de inspeção, inspectionRESULT, 0-operando,1-ok, -1 erro
     "mode": "INSPECTION",
     "params": 1
+  },
+    {
+    //Ativa o modo de recebimento da imagem da inspeção
+    "mode": "Frame",
+    "params": int(size)
   }
 ]
 
