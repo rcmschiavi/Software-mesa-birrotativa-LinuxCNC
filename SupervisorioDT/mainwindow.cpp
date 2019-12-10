@@ -6,9 +6,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->connectionWindow = new ConnectionPrompt(this, beagleBoneIP, beagleBonePort);
+    //IP Config File
+    loadUserSettings();
+    this->connectionWindow = new ConnectionPrompt(this);
     this->tcpSocket = new QTcpSocket();
-
     //Conexão de sinais e slots entre a janela principal e a janela de configuração
     connect(this->connectionWindow, SIGNAL(updateIP(QString)), this, SLOT(saveIpConfiguration(QString)));
     connect(this->connectionWindow, SIGNAL(updatePort(int)), this, SLOT(savePortConfiguration(int)));
@@ -31,6 +32,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (this->stateNow == STANDBY)
     {
+        saveUserSettings();
         event->accept();
     }
     else
@@ -40,6 +42,51 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 //=========================================FILE MANAGEMENT==========================================
+
+void MainWindow::loadUserSettings()
+{
+    QFile* userSettings = new QFile("userSettings.txt", this);
+    userSettings->open(QIODevice::ReadWrite);
+    QTextStream in(userSettings);
+    QString line = in.readLine();
+    if(line.isNull())
+    {
+        QByteArray writeData = ("ip\n"+beagleBoneIP+"\n"+"port\n"+ QString::number(beagleBonePort) + "\n").toUtf8();
+        userSettings->write(writeData);
+    }
+    else
+    {
+        if(line == "ip")
+        {
+            line = in.readLine();
+            if(!line.isNull())
+                beagleBoneIP = line;
+            line = in.readLine();
+            if(line == "port")
+            {
+                line=in.readLine();
+                if(!line.isNull())
+                {
+                    beagleBonePort = line.toInt();
+                    ui->warningLog->append("Última IP Salva:");
+                    ui->warningLog->append("Ip:"+beagleBoneIP);
+                    ui->warningLog->append("Port:"+QString::number(beagleBonePort));
+                }
+            }
+        }
+    }
+    userSettings->close();
+}
+
+void MainWindow::saveUserSettings()
+{
+    QFile* userSettings = new QFile("userSettings.txt", this);
+    userSettings->open(QIODevice::ReadWrite);
+    userSettings->resize(0);
+    QByteArray writeData = ("ip\n"+beagleBoneIP+"\n"+"port\n"+ QString::number(beagleBonePort) + "\n").toUtf8();
+    userSettings->write(writeData);
+    userSettings->close();
+}
 
 void MainWindow::saveJsonToFile(QJsonDocument doc)
 {
@@ -201,6 +248,14 @@ QJsonDocument MainWindow::recieveJsonThroughSocket()
 void MainWindow::on_btConfig_clicked()
 {
     this->connectionWindow->show();
+    this->connectionWindow->setDefaultValues(beagleBoneIP,beagleBonePort);
+}
+
+void MainWindow::disconnectHandler()
+{
+    changeWindowState(EXTESTOP);
+    this->connectionState = false;
+    ui->warningLog->append("Sistema desconectado abruptamente, a parada de emergência externa foi acionada");
 }
 
 //Slot acionado sempre que exite um pacote TCP pronto para leitura.
@@ -243,6 +298,11 @@ void MainWindow::onReadyRead()
             programExec = arr.at(4).toInt();
             taskExec = arr.at(5).toInt();
             inspection = arr.at(6).toInt();
+            /*Sistema de posição na tela
+            arr = obj.value("pos").toArray();
+            ui->lcdB->display(arr.at(0).toDouble());
+            ui->lcdC->display(arr.at(1).toDouble());
+            */
             changeWindowStatus();
         }
         else if(keyValue == "INSPECTION")
@@ -296,6 +356,7 @@ void MainWindow::onReadyRead()
 }
 
 //=============================================STATE MACHINE===============================
+//Só é chamado quando recebe pacote de status tcp.
 void MainWindow::changeWindowStatus()
 {
     if(homed)
@@ -322,6 +383,10 @@ void MainWindow::changeWindowStatus()
         ui->stateInspection->setText("SIM");
     else
         ui->stateInspection->setText("NÃO");
+    if(this->stateNow == AUTO_RUN && !this->programExec && !this->taskExec)
+    {
+        changeWindowState(READY);
+    }
 }
 
 
@@ -485,6 +550,7 @@ void MainWindow::on_btConnect_clicked(bool checked)
        if(tcpSocket->waitForConnected(5000))
        {
            connect(this->tcpSocket, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
+           connect(this->tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnectHandler()));
            this->connectionState = true;
            this->stateNow = CONNECTED_STANDBY;
            ui->stateConnected->setText("SIM");
@@ -507,6 +573,11 @@ void MainWindow::on_btConnect_clicked(bool checked)
        if(this->stateNow == CONNECTED_STANDBY)
        {
            tcpSocket->disconnectFromHost();
+           this->connectionState = false;
+           changeWindowState(STANDBY);
+       }
+       else if(this->stateNow == EXTESTOP and !connectionState)
+       {
            this->connectionState = false;
            changeWindowState(STANDBY);
        }
@@ -653,7 +724,7 @@ void MainWindow::on_btHome_clicked(bool checked)
     }
     else
     {
-        if(!((this->stateNow == JOG || this->stateNow == AUTO) && !this->homing && this->homed))
+        if((this->stateNow == JOG || this->stateNow == AUTO) && !this->homed && this->taskExec)
             ui->btAuto->setChecked(true);
     }
 }

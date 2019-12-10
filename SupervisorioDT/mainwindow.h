@@ -67,6 +67,7 @@ private slots:
     //Configurações de Conexão
     void on_btConfig_clicked();
     void onReadyRead();
+    void disconnectHandler();
 
     //Wrappers Json para TCP/IP
     void sendJsonThroughSocket(QJsonObject obj);
@@ -76,6 +77,8 @@ private slots:
     void saveJsonToFile(QJsonDocument doc);
     QJsonDocument loadJsonFromFile();
     void recieveJsonProgramFromBBB(QJsonObject program);
+    void loadUserSettings();
+    void saveUserSettings();
 
     //STATE MACHINE
     void changeWindowStatus();

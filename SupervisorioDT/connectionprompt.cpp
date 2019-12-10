@@ -1,16 +1,16 @@
 #include "connectionprompt.h"
 #include "ui_connectionprompt.h"
 
-ConnectionPrompt::ConnectionPrompt(QWidget *parent, QString oldip, int oldport) :
+ConnectionPrompt::ConnectionPrompt(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ConnectionPrompt)
 {
     ui->setupUi(this);
-    ui->ip1->text() = oldip.split(".").at(0);
-    ui->ip2->text() = oldip.split(".").at(1);
-    ui->ip3->text() = oldip.split(".").at(2);
-    ui->ip4->text() = oldip.split(".").at(3);
-    ui->port->text() = QString::number(oldport);
+    ui->ip1->text() = "127";
+    ui->ip2->text() = "0";
+    ui->ip3->text() = "0";
+    ui->ip4->text() = "1";
+    ui->port->text() = QString::number(10000);
     ui->ip1->setValidator(new QIntValidator(0, 255, this));
     ui->ip2->setValidator(new QIntValidator(0, 255, this));
     ui->ip3->setValidator(new QIntValidator(0, 255, this));
@@ -22,6 +22,17 @@ ConnectionPrompt::ConnectionPrompt(QWidget *parent, QString oldip, int oldport) 
 ConnectionPrompt::~ConnectionPrompt()
 {
     delete ui;
+}
+
+void ConnectionPrompt::setDefaultValues(QString oldip, int oldport)
+{
+    lastip = oldip;
+    lastport = oldport;
+    ui->ip1->text() = lastip.split(".").at(0);
+    ui->ip2->text() = lastip.split(".").at(1);
+    ui->ip3->text() = lastip.split(".").at(2);
+    ui->ip4->text() = lastip.split(".").at(3);
+    ui->port->text() = QString::number(lastport);
 }
 
 void ConnectionPrompt::on_btSalvar_clicked()
