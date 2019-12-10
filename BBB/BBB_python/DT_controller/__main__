@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #coding: utf-8
 '''
 Classe que realizará todo o fluxo principal do programa
@@ -102,8 +103,7 @@ class Main:
 
         elif self.state=="STOPPED":
             if mode=="INSPECTION":
-                inspect.main(self.MB,cmInPixels=params[2],DBCP=params[0],dbcpTol=params[1],time_trying=5,qRec=self.qRec)
-                self.inspection_params[params[0],params[1],params[2]]
+                self.inspection_params = [params[0],params[1],params[2]]
             elif mode == "":
                 self.JPA.EXEC_PGR = 0
                 self.JPA.TASK_EXEC = 0

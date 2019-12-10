@@ -3,7 +3,7 @@
 
 loadrt hal_bb_gpio output_pins=914,916,918,922 input_pins=815,817
 loadrt stepgen step_type=0,0 ctrl_type=p,p
-loadusr -Wn machine_controll ./jog
+loadusr -Wn machine_controll ~/DT_controller/__main__
 loadrt threads name1=fast fp1=0 period1=50000 name2=slow period2=1000000
 
 

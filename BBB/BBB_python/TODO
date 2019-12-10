@@ -1,0 +1,18 @@
+
+Últimas coisas:
+
+
+Criar a inicialização do software na BBB:
+
+
+Create /etc/init/myjob.conf
+
+vi /etc/init/myjob.conf
+with content like the following
+
+description     "my job"
+start on startup
+task
+exec /path/to/my/script.sh
+
+mais: https://askubuntu.com/questions/228304/how-do-i-run-a-script-at-start-up

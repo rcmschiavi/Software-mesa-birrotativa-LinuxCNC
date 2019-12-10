@@ -100,6 +100,7 @@ def operate_wire(MB, camera, DBCP, dbcpTol,time_trying, qRec):
             return 0
 
         if not qRec.empty():
+            #Verifica se a parada de emergência foi ativada na gui
             data = qRec.get()
             data = json.loads(data)
             if data[0]["mode"]=="EXTESTOP":
