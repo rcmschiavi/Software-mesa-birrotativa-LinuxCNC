@@ -146,7 +146,7 @@ private:
     //BBB Params
     //Speed deg per sec
     double B_maxSpeed=3;
-    double C_maxSpeed=15;
+    double C_maxSpeed=25;
     double B_lastPos=0;
     double C_lastPos=0;
 

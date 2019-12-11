@@ -253,9 +253,12 @@ void MainWindow::on_btConfig_clicked()
 
 void MainWindow::disconnectHandler()
 {
-    changeWindowState(EXTESTOP);
-    this->connectionState = false;
-    ui->warningLog->append("Sistema desconectado abruptamente, a parada de emergência externa foi acionada");
+    if(this->stateNow != CONNECTED_STANDBY)
+    {
+        changeWindowState(EXTESTOP);
+        this->connectionState = false;
+        ui->warningLog->append("Sistema desconectado abruptamente, a parada de emergência externa foi acionada");
+    }
 }
 
 //Slot acionado sempre que exite um pacote TCP pronto para leitura.
@@ -578,6 +581,13 @@ void MainWindow::on_btConnect_clicked(bool checked)
        }
        else if(this->stateNow == EXTESTOP and !connectionState)
        {
+           this->connectionState = false;
+           changeWindowState(STANDBY);
+       }
+       else if(this->stateNow == EXTESTOP and connectionState)
+       {
+           ui->warningLog->append("Cuidado! Desconexões durante paradas de emergência externas podem exigir reinício completo da célula.");
+           tcpSocket->disconnectFromHost();
            this->connectionState = false;
            changeWindowState(STANDBY);
        }
@@ -1158,6 +1168,7 @@ QJsonObject MainWindow::loadWidgetTable()
     }
     QJsonObject senderObject{
         {"mode","PROGRAM"},
+        {"operation", 0},
         {"params",arrayOfMovements}
     };
     return senderObject;
