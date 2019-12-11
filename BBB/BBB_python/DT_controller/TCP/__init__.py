@@ -58,12 +58,11 @@ class Connection:
         try:
             while True:
                 try:
-                    self.data = self.connection.recv(512)
+                    self.data = self.connection.recv(1024)
                     if self.data:
                         print self.data
                         self.i += 1
                         self.qRec.put(self.data)
-                        self.callback("200")
                     else:
                         #Caso a conexão seja perdida, finaliza esse laço e entra no laço de reconectar
                         break

@@ -107,38 +107,33 @@ class Main:
             elif mode == "":
                 self.JPA.EXEC_PGR = 0
                 self.JPA.TASK_EXEC = 0
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)  # Envia o status
 
         elif mode == "HOME":
                 self.state = "HOMING"
                 self.JPA.HOMED = 0
                 self.JPA.HOMING = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
                 #Prepara a maquina para Un-Home.
                 self.homeInit = False
 
         elif self.state=="HOMING":
+
             self.HOME_CYCLE()
             if self.JPA.HOMED == 1:
                 self.JPA.HOMING = 0
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
                 self.state = "STOPPED"
+
+            if mode=="ESTOP":
+                self.state="STOPPED"
+                self.JPA.EXEC_PGR = 0
+                self.JPA.TASK_EXEC = 0
 
         elif (self.state=="CYCSTART" or mode=="CYCSTART") and self.JPA.ACTIVE_PGR == 1:
             if mode=="ESTOP":
                 self.state="STOPPED"
                 self.JPA.EXEC_PGR = 0
                 self.JPA.TASK_EXEC = 0
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
-
             elif mode=="CYCSTART":
                 self.JPA.EXEC_PGR = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
                 self.activeProgram = self.readProgram()
 
             if self.JPA.EXEC_PGR == 1:
@@ -147,45 +142,37 @@ class Main:
                 #Não há programa válido
                 self.state="STOPPED"
                 self.JPA.EXEC_PGR = 0
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
 
         elif self.state == "JOGGING" or mode == "JOG":
-            if mode=="JOG":
+            if mode=="ESTOP":
+                self.state="STOPPED"
+                self.JPA.EXEC_PGR = 0
+                self.JPA.TASK_EXEC = 0
+            elif mode=="JOG":
                 self.jog_buffer.append(params)
                 self.state="JOGGING"
                 self.JPA.TASK_EXEC = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
 
             if len(self.jog_buffer):
                 self.EXEC_MOV()
             else:
                 if not self.doingTask:
                     self.JPA.TASK_EXEC = 0
-                    data = self.JPA.STATUS()
-                    self.qSend.put(2, data)
                     self.state="STOPPED"
 
         if mode == "PROGRAM":
             operation = data[2]
             if operation == 0:
-                self.writeProgram(params[0])
+                self.writeProgram(params)
                 self.JPA.ACTIVE_PGR = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
             elif operation == 1:
                 program = self.readProgram()
                 program = self.JPA.PROGRAM(program)
                 self.qSend.put(2, program)
                 self.JPA.ACTIVE_PGR = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
             elif operation == -1:
                 self.writeProgram("")
                 self.JPA.ACTIVE_PGR = 0
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
 
 
     def EXEC_MOV(self):
@@ -217,8 +204,6 @@ class Main:
             elif not self.waitForInspect and not self.waitForRobot:
                 self.controller.setMachinePos(self.activeProgram[self.prg_point][0],self.activeProgram[self.prg_point][1],self.activeProgram[self.prg_point][2])
                 self.JPA.TASK_EXEC = 1
-                data = self.JPA.STATUS()
-                self.qSend.put(2, data)
                 self.doingTask = True
 
         elif self.doingTask:
@@ -227,14 +212,10 @@ class Main:
                 if self.activeProgram[self.prg_point][3] == 1:
                     self.MB.writeMesaEndOP()
                     self.JPA.TASK_EXEC = 0
-                    data = self.JPA.STATUS()
-                    self.qSend.put(2, data)
                     self.waitForRobot = True
                 elif self.activeProgram[self.prg_point][4] == 1:
                     self.MB.writeMesaEndOP()
                     self.JPA.TASK_EXEC = 0
-                    data = self.JPA.STATUS()
-                    self.qSend.put(2, data)
                     self.waitForInspect = True
                 self.prg_point = self.prg_point + 1
                 self.doingTask = False
@@ -244,8 +225,6 @@ class Main:
             self.waitForInspect = False
             self.JPA.TASK_EXEC = 0
             self.JPA.EXEC_PGR = 0
-            data = self.JPA.STATUS()
-            self.qSend.put(2, data)
 
     def HOME_CYCLE(self):
 
@@ -276,8 +255,6 @@ class Main:
         elif self.bascHomedFine and self.rotHomedFine:
             self.JPA.HOMING = 0
             self.JPA.HOMED = 1
-            data = self.JPA.STATUS()
-            self.qSend.put(2, data)
 
     def HOME_AXIS(self, axis, mode):
         if mode == "normal":
@@ -355,7 +332,22 @@ class Main:
             self.JPA.ACTIVE_PGR = 1
         else:
             self.JPA.ACTIVE_PGR = 0
-        data = self.JPA.STATUS()
-        self.qSend.put(2, data)
+
+    def writeStatus(self):
+        cur_path = os.path.dirname(__file__)
+        with open(cur_path + '/program/status.json', 'w') as outfile:
+            data = self.JPA.STATUS()
+            json.dump(data, outfile, sort_keys=True, indent=4)
+
+
+    def insertQueue(self,data):
+        if not self.qSend.empty():
+            data_i = self.qSend.get()
+            if data_i == data:
+                self.qSend.put(data)
+
+            else:
+                self.qSend.put(data_i)
+                self.qSend.put(data)
 
 M = Main()
