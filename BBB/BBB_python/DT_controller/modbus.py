@@ -114,10 +114,10 @@ class Modbus:
         value = self.boolLstToDecimal(CELL_CONTROL)
         result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         BBB_WAIT = self.readBBBWaiting()
-        print "BBB wait"
+        print "BBB wait wire FWD Modbus"
         while BBB_WAIT:
             BBB_WAIT = self.readBBBWaiting()
-        print "BBB ok"
+        print "BBB ok wire FWD Modbus"
         result2 = self.writeStopWire()
         return [result1,result2]
 
@@ -127,10 +127,10 @@ class Modbus:
         value = self.boolLstToDecimal(CELL_CONTROL)
         result1 = self.c.write_multiple_registers(self.CELL_CTRL_ADDR, [value])
         BBB_WAIT = self.readBBBWaiting()
-        print "BBB wait"
+        print "BBB wait wire Back Modbus"
         while BBB_WAIT:
             BBB_WAIT = self.readBBBWaiting()
-        print "BBB ok"
+        print "BBB ok wire Back Modbus"
         result2 = self.writeStopWire()
         return [result1,result2]
 

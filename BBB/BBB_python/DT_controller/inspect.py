@@ -130,7 +130,7 @@ def operate_wire(MB, camera, DBCP, dbcpTol,time_trying, qRec):
 
 
 
-def main(MB,cmInPixels,DBCP,dbcpTol,time_trying,qRec):
+def main(MB,DBCP,dbcpTol,cmInPixels,time_trying,qRec):
     ''' O retorno dessa função indica o que ocorreu
     -1: Câmera não encontrada
     0: Não foi possível ajustar o comprimento do arame com os valores recebidos

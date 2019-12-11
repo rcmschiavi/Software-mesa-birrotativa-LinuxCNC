@@ -47,6 +47,8 @@ class Main:
 
         self.inspection_params = []
         self.MB = modbus.Modbus()
+        #Checa se há programa para enviar o status para a GUI
+        self.checkProgram()
         self.cycle()
 
     def cycle(self):
@@ -84,6 +86,8 @@ class Main:
         mode = data[0]
         params = data[1]
         P_ESTOP = self.MB.getP_ESTOP()
+
+        print("State: {0} Mode:{1}".format(self.state,mode))
 
         if mode=="EXTESTOP":
             self.state = "EXETSTOP"
@@ -174,6 +178,9 @@ class Main:
                 self.writeProgram("")
                 self.JPA.ACTIVE_PGR = 0
 
+            #Atualiza o arquivo com o status
+            self.writeStatus()
+
 
     def EXEC_MOV(self):
         if not self.controller.isMoving() and not self.doingTask:
@@ -198,8 +205,11 @@ class Main:
             elif self.waitForInspect:
                 if self.MB.readCell_control()[self.MB.ADDR_MESA_START_OP]:
                     #chamar modo inspeção e no fim da inspeção setar wait For Inspect False.
-                    self.MB.writeMesaEndOp()
-                    self.waitForRobot = True
+                    result = inspect.main(MB=self.MB,DBCP=self.inspection_params[0],dbcpTol=self.inspection_params[1],cmInPixels=self.inspection_params[2],time_trying=1,qRec=self.qRec)
+                    if result>0:
+                        self.waitForInspect = False
+                        self.MB.writeMesaEndOp()
+                        self.waitForRobot = True
                 #se a leitura ROBO OK True, Chama o modo Inspeção, no fim do modo inspeção waitForInspect = False, Mesa OK e waitForRobot = True.
             elif not self.waitForInspect and not self.waitForRobot:
                 self.controller.setMachinePos(self.activeProgram[self.prg_point][0],self.activeProgram[self.prg_point][1],self.activeProgram[self.prg_point][2])
@@ -321,8 +331,6 @@ class Main:
         if statinfo.st_size:
             with open(file_name, 'r') as outfile:
                 program = json.load(outfile)
-
-
         return program
 
     def checkProgram(self):
@@ -335,10 +343,9 @@ class Main:
 
     def writeStatus(self):
         cur_path = os.path.dirname(__file__)
-        with open(cur_path + '/program/status.json', 'w') as outfile:
+        with open(cur_path + 'TCP/status.json', 'w') as outfile:
             data = self.JPA.STATUS()
             json.dump(data, outfile, sort_keys=True, indent=4)
-
 
     def insertQueue(self,data):
         if not self.qSend.empty():

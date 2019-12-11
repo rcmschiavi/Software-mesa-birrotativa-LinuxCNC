@@ -11,8 +11,6 @@ import socket
 import time, json, os
 class Connection:
 
-
-
     def __init__(self, qRec, qSend):
 
         self.cur_path = os.path.dirname(__file__)
@@ -20,9 +18,7 @@ class Connection:
         self.qSend = qSend
         self.callback_latency = 2
         self.connection = None
-        self.i = 0
         self.client_address = None
-        self.a = 1
         self.sock = None
         self.server_address = None
         self.start_socket()
@@ -45,8 +41,6 @@ class Connection:
             self.qRec.put("Desconectado")
             time.sleep(0.1)
 
-
-
     def wait_connection(self):
         print "Conectando"
         self.connection, self.client_address = self.sock.accept()
@@ -60,23 +54,37 @@ class Connection:
                 try:
                     self.data = self.connection.recv(1024)
                     if self.data:
-                        print self.data
-                        self.i += 1
+                        print ("Message received: " + self.data)
                         self.qRec.put(self.data)
                     else:
                         #Caso a conexão seja perdida, finaliza esse laço e entra no laço de reconectar
                         break
                 except Exception as e:
-                    print ("Erro 1 waitmessage: " + str(e))
+                    print ("Wait message: " + str(e))
+                    #Envia alguma mensagem de emergência e programa ou envia o status
                     if not self.qSend.empty():
                         self.data=self.qSend.get()
                         self.callback(self.data)
+                    else:
+                        self.data = self.readStatus()
+                        if not self.data == "":
+                            self.callback(self.data)
         except Exception as e:
-            print ("Erro 2 waitmessage: " + str(e))
+            print ("Erro: " + str(e))
 
     def callback(self, data):
         self.connection.sendall(str(data)+"\n")
 
+    def readStatus(self):
+        status = ""
+        file_name = os.path.dirname(__file__) + '/status.json'
+        statinfo = os.stat(file_name)
+        if statinfo.st_size:
+            with open(file_name, 'r') as outfile:
+                status = json.load(outfile)
+            return str(json.dumps(status))
+        else:
+            return ""
 
 class Th(Thread):
 
