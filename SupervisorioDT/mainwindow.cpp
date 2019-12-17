@@ -301,11 +301,9 @@ void MainWindow::onReadyRead()
             programExec = arr.at(4).toInt();
             taskExec = arr.at(5).toInt();
             inspection = arr.at(6).toInt();
-            /*Sistema de posição na tela
             arr = obj.value("pos").toArray();
             ui->lcdB->display(arr.at(0).toDouble());
             ui->lcdC->display(arr.at(1).toDouble());
-            */
             changeWindowStatus();
         }
         else if(keyValue == "INSPECTION")
@@ -366,6 +364,10 @@ void MainWindow::changeWindowStatus()
         ui->stateHomed->setText("SIM");
     else
         ui->stateHomed->setText("NÃO");
+    if(homing)
+        ui->stateHoming->setText("SIM");
+    else
+        ui->stateHoming->setText("NÃO");
     if(turnedOn)
         ui->stateTurnedOn->setText("SIM");
     else
