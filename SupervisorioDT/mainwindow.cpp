@@ -126,15 +126,15 @@ void MainWindow::openFileAct()
         bool inspect;
         QJsonArray arrayOfMovements = doc.object().value("params").toArray();
         clearWidgetTable();
-        for(int i=0; i<arrayOfMovements.size(); i++)
+        for(int i=arrayOfMovements.size()-1; i>=0; i--)
         {
             try{
             movement = arrayOfMovements.at(i).toArray();
             B_ang = movement.at(0).toDouble();
             C_ang = movement.at(1).toDouble();
             veloc = movement.at(2).toDouble();
-            fim_op = movement.at(3).toBool();
-            inspect = movement.at(4).toBool();
+            fim_op = movement.at(3).toInt();
+            inspect = movement.at(4).toInt();
             drawWidgetTable(B_ang,C_ang,veloc,fim_op,inspect);
             }
             catch(...)
